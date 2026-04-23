@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Teen Patti Aura Quantum</title>
-    <!-- GitHub Pages Redeploy -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,7 +13,7 @@
         </header>
 
         <div id="setup-screen" class="screen">
-            <h2>SELECT PLAYERS</h2>
+            <h2>SELECT NUMBER OF PLAYERS</h2>
             <div class="player-selection">
                 <button class="btn-select" onclick="startGame(2)">2</button>
                 <button class="btn-select" onclick="startGame(3)">3</button>
@@ -28,8 +27,8 @@
             </div>
             
             <div id="winner-banner" class="winner-banner hidden">
-                <h2 id="winner-text"></h2>
-                <p id="winning-hand-type"></p>
+                <div id="winner-text">WINNER!</div>
+                <div id="winning-hand-type">TRAIL</div>
             </div>
 
             <div class="controls">

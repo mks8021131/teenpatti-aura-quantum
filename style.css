@@ -1,10 +1,11 @@
 :root {
-    --table-bg: radial-gradient(circle, #0a2e36 0%, #05191e 100%);
+    --table-bg: radial-gradient(circle at center, #1a4a54 0%, #0a2e36 40%, #05191e 100%);
     --neon-cyan: #00E5FF;
-    --neon-glow: 0 0 15px rgba(0, 229, 255, 0.6);
-    --glass-bg: rgba(255, 255, 255, 0.05);
+    --neon-glow: 0 0 20px rgba(0, 229, 255, 0.6);
+    --glass-bg: rgba(255, 255, 255, 0.03);
     --glass-border: rgba(255, 255, 255, 0.1);
-    --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    --card-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+    --gold: #FFD700;
 }
 
 * {
@@ -12,10 +13,11 @@
     padding: 0;
     box-sizing: border-box;
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
-    background: var(--table-bg);
+    background: #000;
     color: #fff;
     min-height: 100vh;
     display: flex;
@@ -28,23 +30,36 @@ body {
     position: relative;
     width: 100vw;
     height: 100vh;
+    background: var(--table-bg);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
 }
 
+/* Decorative center glow */
+.game-container::before {
+    content: '';
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(0, 229, 255, 0.1) 0%, transparent 70%);
+    pointer-events: none;
+}
+
 header {
     position: absolute;
-    top: 20px;
+    top: 30px;
     z-index: 10;
+    pointer-events: none;
 }
 
 header h1 {
-    font-size: 2rem;
-    letter-spacing: 4px;
+    font-size: 1.8rem;
+    letter-spacing: 6px;
     text-shadow: var(--neon-glow);
-    opacity: 0.8;
+    text-transform: uppercase;
+    font-weight: 900;
 }
 
 .aura { color: var(--neon-cyan); }
@@ -52,148 +67,184 @@ header h1 {
 /* Table Setup */
 .table-area {
     position: relative;
-    width: 90%;
-    max-width: 900px;
-    height: 60vh;
-    border: 10px solid rgba(0, 229, 255, 0.1);
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(0, 229, 255, 0.05) 0%, transparent 70%);
+    width: 95%;
+    max-width: 1000px;
+    height: 70vh;
+    border: 15px solid rgba(255, 255, 255, 0.05);
+    border-radius: 200px;
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.5);
+    box-shadow: inset 0 0 150px rgba(0, 0, 0, 0.8), 0 20px 50px rgba(0,0,0,0.5);
 }
 
-/* Player Positions */
+/* Player Areas */
 .player-card-area {
     position: absolute;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    gap: 12px;
     padding: 15px;
-    border-radius: 15px;
+    border-radius: 20px;
     background: var(--glass-bg);
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(8px);
     border: 1px solid var(--glass-border);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 5;
 }
 
 .player-card-area.winner {
-    border-color: var(--neon-cyan);
-    box-shadow: var(--neon-glow);
+    border-color: var(--gold);
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
     transform: scale(1.1);
-    background: rgba(0, 229, 255, 0.1);
+    background: rgba(255, 215, 0, 0.05);
+    z-index: 10;
+}
+
+.player-card-area.winner .player-name {
+    color: var(--gold);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 }
 
 /* Position mapping */
-.pos-bottom { bottom: -20px; left: 50%; transform: translateX(-50%); }
-.pos-top { top: -20px; left: 50%; transform: translateX(-50%); }
-.pos-left { left: -20px; top: 50%; transform: translateY(-50%); }
-.pos-right { right: -20px; top: 50%; transform: translateY(-50%); }
+.pos-bottom { bottom: -40px; left: 50%; transform: translateX(-50%); }
+.pos-top { top: -40px; left: 50%; transform: translateX(-50%); }
+.pos-left { left: 20px; top: 50%; transform: translateY(-50%); }
+.pos-right { right: 20px; top: 50%; transform: translateY(-50%); }
 
 .player-name {
-    font-weight: bold;
-    font-size: 0.9rem;
-    color: var(--neon-cyan);
+    font-weight: 800;
+    font-size: 0.8rem;
+    color: #aaa;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
+}
+
+.pos-bottom .player-name {
+    color: var(--neon-cyan);
+    font-size: 1rem;
 }
 
 /* Playing Cards */
 .cards {
     display: flex;
-    gap: 8px;
+    gap: 10px;
+    perspective: 1000px;
 }
 
-.card {
+.card-container {
     width: 65px;
     height: 95px;
-    background: #fff;
-    border-radius: 6px;
-    color: #000;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-container.reveal {
+    transform: rotateY(180deg);
+}
+
+.card-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 8px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     padding: 6px;
     font-weight: bold;
     box-shadow: var(--card-shadow);
-    position: relative;
-    transform-style: preserve-3d;
-    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    user-select: none;
 }
 
-.card span:last-child {
-    align-self: flex-end;
-    transform: rotate(180deg);
-}
-
-.card.red { color: #d32f2f; }
-
-.card.back {
-    background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
-    border: 2px solid var(--neon-cyan);
+/* Card Front (Value) */
+.card-front {
+    background: #fff;
+    color: #000;
     transform: rotateY(180deg);
 }
 
-.card.back::after {
-    content: '♣';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: var(--neon-cyan);
-    font-size: 2rem;
-    opacity: 0.3;
+.card-front .rank { font-size: 1.1rem; line-height: 1; }
+.card-front .suit { font-size: 1.2rem; align-self: center; }
+.card-front .suit-mini { font-size: 0.7rem; align-self: flex-end; transform: rotate(180deg); }
+
+.card-front.red { color: #d32f2f; }
+
+/* Card Back */
+.card-back {
+    background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
+    border: 2px solid var(--neon-cyan);
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-/* Animations */
-@keyframes dealCard {
+.card-back::after {
+    content: '♠';
+    color: var(--neon-cyan);
+    font-size: 2rem;
+    opacity: 0.2;
+}
+
+/* Deal Animation */
+@keyframes dealFromCenter {
     from {
         opacity: 0;
-        transform: translate(-50%, -500%) scale(0.5) rotate(720deg);
+        transform: translate(var(--deal-x), var(--deal-y)) scale(0) rotate(360deg);
     }
 }
 
 .card-deal-anim {
-    animation: dealCard 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+    animation: dealFromCenter 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Winner Glow Pulse */
+@keyframes winnerPulse {
+    0% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
+    50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.8); }
+    100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
+}
+
+.player-card-area.winner {
+    animation: winnerPulse 2s infinite;
 }
 
 /* Controls */
 .controls {
     position: absolute;
-    bottom: 40px;
+    bottom: 50px;
     display: flex;
     gap: 20px;
     z-index: 100;
 }
 
 .btn-main, .btn-select {
-    background: var(--glass-bg);
+    background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(10px);
-    border: 1px solid var(--neon-cyan);
+    border: 2px solid var(--neon-cyan);
     color: var(--neon-cyan);
-    padding: 12px 30px;
-    font-size: 1rem;
-    font-weight: bold;
-    letter-spacing: 2px;
+    padding: 14px 40px;
+    font-size: 1.1rem;
+    font-weight: 900;
+    letter-spacing: 3px;
     cursor: pointer;
-    border-radius: 50px;
+    border-radius: 100px;
     transition: all 0.3s ease;
-    box-shadow: inset 0 0 10px rgba(0, 229, 255, 0.1);
+    text-transform: uppercase;
 }
 
 .btn-main:hover, .btn-select:hover {
     background: var(--neon-cyan);
     color: #000;
     box-shadow: var(--neon-glow);
-    transform: translateY(-2px);
+    transform: translateY(-3px);
 }
 
-.btn-main:active { transform: translateY(0); }
+.btn-main:active { transform: translateY(-1px); }
 
-/* Overlays */
+/* Screens */
 .screen {
     width: 100%;
     height: 100%;
@@ -201,48 +252,56 @@ header h1 {
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    transition: opacity 0.5s ease;
 }
 
 .hidden { display: none !important; }
 
-.player-selection {
-    display: flex;
-    gap: 20px;
-    margin-top: 30px;
+#setup-screen h2 {
+    letter-spacing: 4px;
+    margin-bottom: 30px;
+    font-size: 1.2rem;
+    opacity: 0.7;
 }
 
+/* Winner Banner */
 .winner-banner {
     position: absolute;
-    top: 15%;
+    top: 20%;
     text-align: center;
-    background: rgba(0, 0, 0, 0.6);
-    padding: 20px 40px;
-    border-radius: 100px;
-    border: 1px solid var(--neon-cyan);
-    box-shadow: var(--neon-glow);
-    animation: bannerPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-@keyframes bannerPop {
-    from { transform: scale(0); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
+    background: linear-gradient(90deg, transparent, rgba(0,0,0,0.8), transparent);
+    width: 100%;
+    padding: 30px 0;
+    z-index: 20;
+    pointer-events: none;
 }
 
 #winner-text {
-    font-size: 1.8rem;
-    color: var(--neon-cyan);
+    font-size: 2.5rem;
+    color: var(--gold);
     text-transform: uppercase;
+    font-weight: 900;
+    letter-spacing: 5px;
+    margin-bottom: 5px;
 }
 
 #winning-hand-type {
-    font-size: 0.9rem;
-    letter-spacing: 1px;
+    font-size: 1rem;
+    color: #fff;
     opacity: 0.8;
+    letter-spacing: 2px;
 }
 
+/* Responsive */
 @media (max-width: 768px) {
-    .table-area { width: 95%; height: 70vh; border-radius: 30px; }
-    .card { width: 50px; height: 75px; font-size: 0.8rem; }
+    .table-area {
+        height: 60vh;
+        border-radius: 40px;
+        border-width: 10px;
+    }
+    .card-container { width: 50px; height: 75px; }
     .pos-left { left: 10px; }
     .pos-right { right: 10px; }
+    header h1 { font-size: 1.4rem; }
+    .btn-main { padding: 12px 30px; font-size: 0.9rem; }
 }

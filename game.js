@@ -20,6 +20,56 @@ const HAND_RANK = {
     HIGH_CARD: 1
 };
 
+// Sound Management using Web Audio API
+const SoundManager = {
+    ctx: null,
+    init() {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    },
+    playDeal() {
+        if (!this.ctx) this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.1);
+    },
+    playFlip() {
+        if (!this.ctx) this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(200, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.1);
+    },
+    playWin() {
+        if (!this.ctx) this.init();
+        [440, 554, 659, 880].forEach((freq, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.frequency.setValueAtTime(freq, this.ctx.currentTime + i * 0.1);
+            gain.gain.setValueAtTime(0.1, this.ctx.currentTime + i * 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + i * 0.1 + 0.5);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(this.ctx.currentTime + i * 0.1);
+            osc.stop(this.ctx.currentTime + i * 0.1 + 0.5);
+        });
+    }
+};
+
 function createDeck() {
     deck = [];
     for (let suit of SUITS) {
@@ -51,7 +101,7 @@ function initPlayers() {
     for (let i = 0; i < playerCount; i++) {
         players.push({
             id: i,
-            name: `Player ${i + 1}`,
+            name: i === 0 ? "YOU" : `Player ${i + 1}`,
             cards: [],
             handInfo: null,
             pos: POSITIONS[i]
@@ -73,74 +123,99 @@ async function dealCards() {
     shuffleDeck();
 
     const dealBtn = document.getElementById('deal-btn');
-    dealBtn.disabled = true;
-    dealBtn.style.opacity = '0.5';
+    dealBtn.classList.add('hidden');
+    
+    if (navigator.vibrate) navigator.vibrate(50);
+    SoundManager.init();
 
-    // Sequential dealing animation
+    // Reset UI
+    players.forEach(p => {
+        document.getElementById(`player-${p.id}`).classList.remove('winner');
+        document.getElementById(`cards-${p.id}`).innerHTML = '';
+    });
+
+    // Sequential dealing
     for (let cardIdx = 0; cardIdx < 3; cardIdx++) {
         for (let player of players) {
             const card = deck.pop();
             player.cards[cardIdx] = card;
-            addCardToUI(player.id, card, true, cardIdx);
-            await new Promise(resolve => setTimeout(resolve, 150));
+            addCardToUI(player.id, card, cardIdx);
+            SoundManager.playDeal();
+            await new Promise(r => setTimeout(r, 150));
         }
     }
 
-    dealBtn.classList.add('hidden');
-    dealBtn.disabled = false;
-    dealBtn.style.opacity = '1';
+    // Auto-reveal for Player 1 (YOU)
+    await new Promise(r => setTimeout(r, 500));
+    revealPlayer(0);
+
     document.getElementById('show-btn').classList.remove('hidden');
 }
 
-function addCardToUI(playerId, card, faceDown, index) {
+function addCardToUI(playerId, card, index) {
     const cardContainer = document.getElementById(`cards-${playerId}`);
-    const cardEl = document.createElement('div');
     
-    cardEl.className = `card back card-deal-anim`;
-    cardEl.style.animationDelay = '0s';
-    cardEl.innerHTML = '?';
+    // Create card element structure
+    const container = document.createElement('div');
+    container.className = 'card-container card-deal-anim';
+    container.id = `card-${playerId}-${index}`;
+
+    const isRed = card.suit === '♥' || card.suit === '♦';
     
-    cardContainer.appendChild(cardEl);
+    container.innerHTML = `
+        <div class="card-face card-back"></div>
+        <div class="card-face card-front ${isRed ? 'red' : ''}">
+            <div class="rank">${card.value}</div>
+            <div class="suit">${card.suit}</div>
+            <div class="suit-mini">${card.suit}</div>
+        </div>
+    `;
+
+    // Position detection for animation
+    const rect = document.getElementById(`player-${playerId}`).getBoundingClientRect();
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    
+    container.style.setProperty('--deal-x', `${centerX - rect.left - 30}px`);
+    container.style.setProperty('--deal-y', `${centerY - rect.top - 45}px`);
+
+    cardContainer.appendChild(container);
 }
 
-function renderPlayerCards(player, reveal = false) {
-    const cardContainer = document.getElementById(`cards-${player.id}`);
-    cardContainer.innerHTML = '';
-
-    player.cards.forEach((card) => {
-        const cardEl = document.createElement('div');
-        const isRed = card.suit === '♥' || card.suit === '♦';
-        
-        if (reveal) {
-            cardEl.className = `card ${isRed ? 'red' : ''}`;
-            cardEl.innerHTML = `
-                <span>${card.value}${card.suit}</span>
-                <span>${card.value}${card.suit}</span>
-            `;
-        } else {
-            cardEl.className = `card back`;
-            cardEl.innerHTML = '?';
+function revealPlayer(playerId) {
+    for (let i = 0; i < 3; i++) {
+        const card = document.getElementById(`card-${playerId}-${i}`);
+        if (card) {
+            card.classList.add('reveal');
+            SoundManager.playFlip();
         }
-        cardContainer.appendChild(cardEl);
-    });
+    }
 }
 
-function showWinner() {
-    players.forEach(p => {
-        p.handInfo = evaluateHand(p.cards);
-        renderPlayerCards(p, true);
-    });
+async function showWinner() {
+    document.getElementById('show-btn').classList.add('hidden');
 
+    // Reveal everyone
+    for (let i = 1; i < playerCount; i++) {
+        revealPlayer(i);
+        await new Promise(r => setTimeout(r, 300));
+    }
+
+    players.forEach(p => p.handInfo = evaluateHand(p.cards));
     const winner = determineWinner(players);
     
+    await new Promise(r => setTimeout(r, 500));
+
+    // UI Feedback
     document.getElementById(`player-${winner.id}`).classList.add('winner');
-    
     const banner = document.getElementById('winner-banner');
-    document.getElementById('winner-text').innerText = `${winner.name} Wins!`;
+    document.getElementById('winner-text').innerText = `${winner.name} WINS!`;
     document.getElementById('winning-hand-type').innerText = winner.handInfo.handName;
     banner.classList.remove('hidden');
 
-    document.getElementById('show-btn').classList.add('hidden');
+    SoundManager.playWin();
+    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+
     document.getElementById('restart-btn').classList.remove('hidden');
 }
 
@@ -163,6 +238,7 @@ function evaluateHand(cards) {
     let isSeq = false;
     let seqHighCard = ranks[0];
 
+    // AKQ is 15 (highest), A23 is 14 (second highest), others are ranks[0]
     if (ranks[0] === 14 && ranks[1] === 13 && ranks[2] === 12) {
         isSeq = true;
         seqHighCard = 15;
@@ -174,10 +250,10 @@ function evaluateHand(cards) {
         seqHighCard = ranks[0];
     }
 
-    if (isTrail) return { score: HAND_RANK.TRAIL, handName: 'Trail (Set)', subRank: ranks[0] };
-    if (isSeq && isColor) return { score: HAND_RANK.PURE_SEQUENCE, handName: 'Pure Sequence', subRank: seqHighCard };
-    if (isSeq) return { score: HAND_RANK.SEQUENCE, handName: 'Sequence', subRank: seqHighCard };
-    if (isColor) return { score: HAND_RANK.COLOR, handName: 'Color (Flush)', subRank: ranks };
+    if (isTrail) return { score: HAND_RANK.TRAIL, handName: 'TRAIL (SET)', subRank: ranks[0] };
+    if (isSeq && isColor) return { score: HAND_RANK.PURE_SEQUENCE, handName: 'PURE SEQUENCE', subRank: seqHighCard };
+    if (isSeq) return { score: HAND_RANK.SEQUENCE, handName: 'SEQUENCE', subRank: seqHighCard };
+    if (isColor) return { score: HAND_RANK.COLOR, handName: 'COLOR (FLUSH)', subRank: ranks };
     
     const isPair = ranks[0] === ranks[1] || ranks[1] === ranks[2] || ranks[0] === ranks[2];
     if (isPair) {
@@ -185,10 +261,10 @@ function evaluateHand(cards) {
         if (ranks[0] === ranks[1]) { pairRank = ranks[0]; kicker = ranks[2]; }
         else if (ranks[1] === ranks[2]) { pairRank = ranks[1]; kicker = ranks[0]; }
         else { pairRank = ranks[0]; kicker = ranks[1]; }
-        return { score: HAND_RANK.PAIR, handName: 'Pair', subRank: [pairRank, kicker] };
+        return { score: HAND_RANK.PAIR, handName: 'PAIR', subRank: [pairRank, kicker] };
     }
 
-    return { score: HAND_RANK.HIGH_CARD, handName: 'High Card', subRank: ranks };
+    return { score: HAND_RANK.HIGH_CARD, handName: 'HIGH CARD', subRank: ranks };
 }
 
 function determineWinner(players) {
