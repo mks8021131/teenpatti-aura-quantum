@@ -4,41 +4,81 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Teen Patti Aura Quantum</title>
-    <!-- PREMIUM_UI_REDEPLOY_FORCE_V2 -->
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="game-container">
-        <header>
-            <h1>TEEN PATTI <span class="aura">AURA</span></h1>
-        </header>
-
-        <div id="setup-screen" class="screen">
-            <h2>SELECT NUMBER OF PLAYERS</h2>
-            <div class="player-selection">
-                <button class="btn-select" onclick="startGame(2)">2</button>
-                <button class="btn-select" onclick="startGame(3)">3</button>
-                <button class="btn-select" onclick="startGame(4)">4</button>
-            </div>
-        </div>
-
-        <div id="game-screen" class="screen hidden">
-            <div class="table-area">
-                <div id="players-container"></div>
-            </div>
+    <div class="app-container">
+        <!-- Left Sidebar: Controls -->
+        <aside class="sidebar sidebar-left">
+            <h2>Controls</h2>
             
-            <div id="winner-banner" class="winner-banner hidden">
-                <div id="winner-text">WINNER!</div>
-                <div id="winning-hand-type">TRAIL</div>
+            <div class="control-group">
+                <span class="label">Players</span>
+                <div class="player-selector">
+                    <button class="selector-btn" onclick="setPlayerCount(2)">2</button>
+                    <button class="selector-btn" onclick="setPlayerCount(3)">3</button>
+                    <button class="selector-btn active" id="btn-p4" onclick="setPlayerCount(4)">4</button>
+                </div>
             </div>
 
-            <div class="controls">
-                <button id="deal-btn" class="btn-main" onclick="dealCards()">DEAL</button>
-                <button id="show-btn" class="btn-main hidden" onclick="showWinner()">SHOW</button>
-                <button id="restart-btn" class="btn-main hidden" onclick="resetGame()">RESTART</button>
+            <div class="control-group">
+                <span class="label">Settings</span>
+                <div class="toggle-item">
+                    <span>Sound</span>
+                    <input type="checkbox" id="sound-toggle" checked>
+                </div>
+                <div class="toggle-item">
+                    <span>Haptic</span>
+                    <input type="checkbox" id="haptic-toggle" checked>
+                </div>
             </div>
-        </div>
+
+            <button class="btn-primary" id="deal-btn" onclick="dealCards()">Deal Cards</button>
+            <button class="btn-primary hidden" id="show-btn" onclick="showWinner()">Show Winner</button>
+            <button class="btn-primary hidden" id="restart-btn" onclick="resetGame()">New Round</button>
+        </aside>
+
+        <!-- Center Area: Game Table -->
+        <main class="main-game">
+            <div class="game-table" id="game-table">
+                <div class="center-deck">
+                    <div class="card-box">
+                        <div class="card-side card-back"></div>
+                    </div>
+                </div>
+                <div id="players-container">
+                    <!-- Slots will be injected here -->
+                </div>
+            </div>
+
+            <!-- Winner Banner -->
+            <div id="winner-banner" class="winner-banner hidden">
+                <div id="win-name">PLAYER 1</div>
+                <div id="win-hand">TRAIL (SET)</div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar: Info -->
+        <aside class="sidebar sidebar-right">
+            <h2>Game Info</h2>
+            <div class="info-list">
+                <div class="info-item">
+                    <span class="label">Status</span>
+                    <span class="val" id="game-status">Waiting</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Last Winner</span>
+                    <span class="val" id="last-winner">None</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Round</span>
+                    <span class="val" id="round-count">1</span>
+                </div>
+            </div>
+        </aside>
     </div>
+
     <script src="game.js"></script>
 </body>
 </html>
