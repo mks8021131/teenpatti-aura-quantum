@@ -3,143 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aura Quantum Teen Patti | Ultra-Premium Experience</title>
+    <title>Teen Patti Royale | Ultra-Premium 3D Experience</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Navbar -->
     <nav>
-        <div class="logo">AURA <span>QUANTUM</span></div>
+        <div class="logo">ROYALE <span>QUANTUM</span></div>
         <div class="nav-links">
-            <a href="#home">Home</a>
-            <a href="#play">Live Game</a>
-            <a href="#features">Features</a>
-            <a href="#download" class="btn-apk-nav">Download APK</a>
+            <a href="#">Lobby</a>
+            <a href="#" class="btn-apk-nav">Download APK</a>
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <section class="hero" id="home">
-        <div class="hero-content">
-            <h1>The New Standard of <span>Teen Patti</span></h1>
-            <p>Experience the ultimate high-stakes casino atmosphere with Aura Quantum. Optimized for offline play with cinematic animations and real-world card physics.</p>
-            <div class="hero-btns">
-                <button class="btn-primary" style="padding: 15px 45px; width: auto;" onclick="document.getElementById('play').scrollIntoView()">Play Now</button>
-                <a href="#download" class="btn-apk-nav" style="padding: 15px 45px;">Get APK</a>
+    <div class="app-container">
+        <!-- Command Panel -->
+        <aside class="sidebar">
+            <h2>Command</h2>
+            <div class="control-group">
+                <span class="label">Players</span>
+                <div class="player-selector">
+                    <button class="selector-btn" onclick="setPlayerCount(2)">2</button>
+                    <button class="selector-btn" onclick="setPlayerCount(3)">3</button>
+                    <button class="selector-btn active" onclick="setPlayerCount(4)">4</button>
+                </div>
             </div>
-        </div>
-    </section>
+            <div class="control-group">
+                <span class="label">Settings</span>
+                <div class="toggle-item"><span>Sound</span><input type="checkbox" id="sound-toggle" checked></div>
+                <div class="toggle-item"><span>Haptic</span><input type="checkbox" id="haptic-toggle" checked></div>
+            </div>
+            <button class="btn-primary" id="deal-btn" onclick="dealCards()">Deal Hand</button>
+            <button class="btn-primary hidden" id="show-btn">Next Player</button>
+            <button class="btn-primary hidden" id="restart-btn" onclick="resetGame()">New Round</button>
+        </aside>
 
-    <!-- Game Section -->
-    <section class="game-section" id="play">
-        <div class="section-title">Integrated Game Engine</div>
-        
-        <div class="app-container">
-            <!-- Left Sidebar -->
-            <aside class="sidebar sidebar-left">
-                <h2>Command</h2>
-                
-                <div class="control-group">
-                    <span class="label">Players</span>
-                    <div class="player-selector">
-                        <button class="selector-btn" onclick="setPlayerCount(2)">2</button>
-                        <button class="selector-btn" onclick="setPlayerCount(3)">3</button>
-                        <button class="selector-btn active" onclick="setPlayerCount(4)">4</button>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <span class="label">Preferences</span>
-                    <div class="toggle-item">
-                        <span>Audio Feedback</span>
-                        <input type="checkbox" id="sound-toggle" checked>
-                    </div>
-                    <div class="toggle-item">
-                        <span>Haptic Engine</span>
-                        <input type="checkbox" id="haptic-toggle" checked>
-                    </div>
-                </div>
-
-                <button class="btn-primary" id="deal-btn" onclick="dealCards()">Deal Hand</button>
-                <button class="btn-primary hidden" id="show-btn">Next Player</button>
-                <button class="btn-primary hidden" id="restart-btn" onclick="resetGame()">New Round</button>
-            </aside>
-
-            <!-- Main Table -->
-            <main class="main-game">
-                <div class="game-table" id="game-table">
+        <!-- 3D Game Scene -->
+        <main class="main-game">
+            <div class="table-3d-wrap">
+                <div class="table-surface">
                     <div class="center-focus">
                         <div class="deck-stack"></div>
                     </div>
                     <div id="players-container"></div>
                 </div>
+            </div>
 
-                <!-- Turn Transition Overlay -->
-                <div id="pass-overlay" class="pass-overlay hidden">
-                    <p>Passing Device To</p>
-                    <h2 id="pass-player-name">PLAYER 1</h2>
-                    <button class="btn-primary" style="width: auto; padding: 15px 50px;" onclick="revealCurrentPlayer()">Tap To Reveal Hand</button>
-                </div>
+            <!-- Transition Overlay -->
+            <div id="pass-overlay" class="pass-overlay hidden">
+                <p>Pass Device To</p>
+                <h2 id="pass-player-name">PLAYER 1</h2>
+                <button class="btn-primary" style="width: auto; padding: 15px 50px;" onclick="revealCurrentPlayer()">Tap to Reveal</button>
+            </div>
 
-                <!-- Final Winner Overlay -->
-                <div id="winner-banner" class="winner-banner hidden">
-                    <div id="win-name">PLAYER 1</div>
-                    <div id="win-hand">TRAIL (SET)</div>
-                </div>
-            </main>
+            <!-- Victory Banner -->
+            <div id="winner-banner" class="winner-banner hidden">
+                <div id="win-name">PLAYER 1</div>
+                <div id="win-hand">TRAIL (SET)</div>
+            </div>
+        </main>
 
-            <!-- Right Sidebar -->
-            <aside class="sidebar sidebar-right">
-                <h2>Intelligence</h2>
-                <div class="control-group">
-                    <span class="label">Status</span>
-                    <div class="toggle-item" style="background: transparent; padding: 0;">
-                        <span id="game-status" style="font-weight: 900; color: var(--neon-cyan);">READY</span>
-                    </div>
-                </div>
-                <div class="control-group">
-                    <span class="label">Last Winner</span>
-                    <div class="toggle-item" style="background: transparent; padding: 0;">
-                        <span id="last-winner" style="font-weight: 900;">NONE</span>
-                    </div>
-                </div>
-                <div class="control-group">
-                    <span class="label">Session Round</span>
-                    <div class="toggle-item" style="background: transparent; padding: 0;">
-                        <span id="round-count" style="font-weight: 900; color: var(--neon-cyan);">1</span>
-                    </div>
-                </div>
-            </aside>
-        </div>
-    </section>
-
-    <!-- Features -->
-    <section class="features-section" id="features">
-        <div class="f-card">
-            <h3>Cinema Physics</h3>
-            <p>Cards fly from the center deck with random tilt and realistic vector-based motion for a natural feel.</p>
-        </div>
-        <div class="f-card">
-            <h3>Haptic Feedback</h3>
-            <p>Tactile vibrations on mobile devices confirm dealing, winning, and revealing cards.</p>
-        </div>
-        <div class="f-card">
-            <h3>Multiplayer Privacy</h3>
-            <p>Same-device pass-and-play mode with high-security turn transitions to hide private hands.</p>
-        </div>
-        <div class="f-card">
-            <h3>Gold Standard</h3>
-            <p>Hand-crafted evaluation logic for AKQ sequences and standard Teen Patti ranking rules.</p>
-        </div>
-    </section>
-
-    <!-- Download -->
-    <section class="download-section" id="download">
-        <h2>Ready for the App?</h2>
-        <a href="public/app-release.apk" class="btn-apk-large">Download APK</a>
-        <p style="opacity: 0.3; margin-top: 20px;">Enable "Unknown Sources" in Android settings to install.</p>
-    </section>
+        <!-- Intelligence Panel -->
+        <aside class="sidebar sidebar-right">
+            <h2>Stats</h2>
+            <div class="control-group">
+                <span class="label">Status</span>
+                <div id="game-status" style="font-weight: 900; color: var(--neon-cyan);">READY</div>
+            </div>
+            <div class="control-group">
+                <span class="label">Last Winner</span>
+                <div id="last-winner" style="font-weight: 900;">NONE</div>
+            </div>
+            <div class="control-group">
+                <span class="label">Round</span>
+                <div id="round-count" style="font-weight: 900; color: var(--neon-cyan);">1</div>
+            </div>
+        </aside>
+    </div>
 
     <script src="game.js"></script>
 </body>

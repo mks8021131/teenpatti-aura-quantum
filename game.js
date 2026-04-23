@@ -10,49 +10,32 @@ let roundCount = 1;
 let currentPlayerIndex = 0;
 let gameState = 'IDLE';
 
-// Robust Audio Engine
 const AudioEngine = {
     ctx: null,
-    init() { 
-        if (!this.ctx) {
-            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (this.ctx.state === 'suspended') {
-            this.ctx.resume();
-        }
-    },
-    play(freq, duration = 0.1, type = 'sine', volume = 0.05) {
+    init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+    play(freq, dur = 0.1, type = 'sine') {
         if (!document.getElementById('sound-toggle').checked) return;
         this.init();
         const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
+        const g = this.ctx.createGain();
         osc.type = type;
         osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-        gain.gain.setValueAtTime(volume, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start();
-        osc.stop(this.ctx.currentTime + duration);
+        g.gain.setValueAtTime(0.05, this.ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+        osc.connect(g); g.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + dur);
     },
-    deal() { this.play(300, 0.1, 'sine', 0.05); },
-    flip() { this.play(500, 0.08, 'triangle', 0.03); },
-    win() { [440, 554, 659, 880].forEach((f, i) => setTimeout(() => this.play(f, 0.5, 'sine', 0.05), i * 150)); }
+    deal() { this.play(300, 0.1, 'sine'); },
+    flip() { this.play(500, 0.08, 'triangle'); },
+    win() { [523, 659, 783, 1046].forEach((f, i) => setTimeout(() => this.play(f, 0.4, 'sine'), i * 150)); }
 };
 
-function hapticFeedback(pattern = 50) {
-    if (document.getElementById('haptic-toggle').checked && navigator.vibrate) {
-        navigator.vibrate(pattern);
-    }
-}
+function haptic(p = 50) { if (document.getElementById('haptic-toggle').checked && navigator.vibrate) navigator.vibrate(p); }
 
 function setPlayerCount(num) {
-    if (gameState === 'DEALING' || gameState === 'PLAYING') return;
+    if (gameState !== 'IDLE') return;
     playerCount = num;
-    document.querySelectorAll('.selector-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (parseInt(btn.innerText) === num) btn.classList.add('active');
-    });
+    document.querySelectorAll('.selector-btn').forEach(btn => btn.classList.toggle('active', parseInt(btn.innerText) === num));
     initTable();
 }
 
@@ -64,26 +47,17 @@ function initTable() {
     gameState = 'IDLE';
 
     for (let i = 0; i < playerCount; i++) {
-        players.push({
-            id: i,
-            name: i === 0 ? "PLAYER 1" : `PLAYER ${i + 1}`,
-            cards: [],
-            pos: POSITIONS[i],
-            handInfo: null
-        });
-
+        players.push({ id: i, name: `PLAYER ${i + 1}`, cards: [], pos: POSITIONS[i] });
         const slot = document.createElement('div');
         slot.className = `player-slot ${players[i].pos}`;
         slot.id = `player-${i}`;
-        
-        let initialCardsHTML = '';
-        for(let j=0; j<3; j++) {
-            initialCardsHTML += `<div class="card-container"><div class="card-face card-back"></div></div>`;
-        }
-
         slot.innerHTML = `
             <div class="player-label-styled">${players[i].name}</div>
-            <div class="card-group" id="cards-${i}">${initialCardsHTML}</div>
+            <div class="card-group" id="cards-${i}">
+                <div class="card-container"><div class="card-face card-back"></div></div>
+                <div class="card-container"><div class="card-face card-back"></div></div>
+                <div class="card-container"><div class="card-face card-back"></div></div>
+            </div>
         `;
         container.appendChild(slot);
     }
@@ -92,16 +66,11 @@ function initTable() {
     document.getElementById('show-btn').classList.add('hidden');
     document.getElementById('restart-btn').classList.add('hidden');
     document.getElementById('winner-banner').classList.add('hidden');
-    document.getElementById('pass-overlay').classList.add('hidden');
 }
 
 function createDeck() {
     deck = [];
-    for (let suit of SUITS) {
-        for (let value of VALUES) {
-            deck.push({ suit, value, rank: VALUE_MAP[value] });
-        }
-    }
+    for (let s of SUITS) for (let v of VALUES) deck.push({ suit: s, value: v, rank: VALUE_MAP[v] });
 }
 
 function shuffle() {
@@ -112,23 +81,16 @@ function shuffle() {
 }
 
 async function dealCards() {
-    if (gameState !== 'IDLE') return;
-    
-    AudioEngine.init(); // Initialize audio context on user interaction
+    AudioEngine.init();
     createDeck();
     shuffle();
-    hapticFeedback(30);
+    haptic(30);
     gameState = 'DEALING';
-    
     document.getElementById('deal-btn').classList.add('hidden');
     document.getElementById('game-status').innerText = "DEALING...";
 
-    players.forEach(p => {
-        document.getElementById(`cards-${p.id}`).innerHTML = '';
-        document.getElementById(`player-${p.id}`).classList.remove('winner', 'active-glow');
-    });
+    players.forEach(p => document.getElementById(`cards-${p.id}`).innerHTML = '');
 
-    // Sequential Deal Animation
     for (let c = 0; c < 3; c++) {
         for (let p = 0; p < playerCount; p++) {
             const card = deck.pop();
@@ -138,9 +100,7 @@ async function dealCards() {
             await new Promise(r => setTimeout(r, 120));
         }
     }
-
-    await new Promise(r => setTimeout(r, 500));
-    startTurnSequence();
+    setTimeout(startTurnSequence, 500);
 }
 
 function spawnCard(pId, card, idx) {
@@ -148,18 +108,16 @@ function spawnCard(pId, card, idx) {
     const box = document.createElement('div');
     box.className = 'card-container anim-deal';
     box.id = `card-${pId}-${idx}`;
-
     const isRed = card.suit === '♥' || card.suit === '♦';
     
-    // Precise vector calculation for Fly-In from center
-    const slotRect = document.getElementById(`player-${pId}`).getBoundingClientRect();
-    const tableRect = document.getElementById('game-table').getBoundingClientRect();
-    const centerX = tableRect.left + tableRect.width / 2;
-    const centerY = tableRect.top + tableRect.height / 2;
-    
-    const dx = centerX - (slotRect.left + slotRect.width / 2);
-    const dy = centerY - (slotRect.top + slotRect.height / 2);
-    
+    // Relative to the table center (0,0 of table-surface basically)
+    const slot = document.getElementById(`player-${pId}`);
+    const table = document.querySelector('.table-surface');
+    const tableRect = table.getBoundingClientRect();
+    const slotRect = slot.getBoundingClientRect();
+    const dx = (tableRect.width/2) - (slotRect.left - tableRect.left + slotRect.width/2);
+    const dy = (tableRect.height/2) - (slotRect.top - tableRect.top + slotRect.height/2);
+
     box.style.setProperty('--dx', `${dx}px`);
     box.style.setProperty('--dy', `${dy}px`);
     box.style.setProperty('--dr', `${Math.random() * 20 - 10}deg`);
@@ -169,7 +127,7 @@ function spawnCard(pId, card, idx) {
         <div class="card-face card-front ${isRed ? 'red' : ''}">
             <div class="rank">${card.value}</div>
             <div class="suit-center">${card.suit}</div>
-            <div class="suit-mini">${card.suit}</div>
+            <div class="rank" style="transform:rotate(180deg)">${card.value}</div>
         </div>
     `;
     container.appendChild(box);
@@ -178,156 +136,91 @@ function spawnCard(pId, card, idx) {
 function startTurnSequence() {
     gameState = 'PLAYING';
     if (currentPlayerIndex < playerCount) {
-        showPassOverlay();
+        document.getElementById('pass-player-name').innerText = players[currentPlayerIndex].name;
+        document.getElementById('pass-overlay').classList.remove('hidden');
+        document.getElementById('game-status').innerText = `TURN: ${players[currentPlayerIndex].name}`;
     } else {
-        evaluateFinalWinner();
+        showFinalShowdown();
     }
-}
-
-function showPassOverlay() {
-    const overlay = document.getElementById('pass-overlay');
-    const nameEl = document.getElementById('pass-player-name');
-    nameEl.innerText = players[currentPlayerIndex].name;
-    overlay.classList.remove('hidden');
-    document.getElementById('game-status').innerText = `PASSING TO ${players[currentPlayerIndex].name}`;
 }
 
 function revealCurrentPlayer() {
-    AudioEngine.init();
-    const overlay = document.getElementById('pass-overlay');
-    overlay.classList.add('hidden');
-    
+    document.getElementById('pass-overlay').classList.add('hidden');
     const pId = currentPlayerIndex;
-    const playerEl = document.getElementById(`player-${pId}`);
-    playerEl.classList.add('active-glow');
-    
+    document.getElementById(`player-${pId}`).classList.add('active-glow');
     for (let i = 0; i < 3; i++) {
-        const card = document.getElementById(`card-${pId}-${i}`);
-        if (card) {
-            setTimeout(() => {
-                card.classList.add('reveal');
-                AudioEngine.flip();
-            }, i * 150);
-        }
+        setTimeout(() => {
+            document.getElementById(`card-${pId}-${i}`).classList.add('reveal');
+            AudioEngine.flip();
+        }, i * 150);
     }
-
-    hapticFeedback(50);
-    
     const showBtn = document.getElementById('show-btn');
-    showBtn.innerText = (currentPlayerIndex === playerCount - 1) ? "Final Showdown" : "End My Turn";
+    showBtn.innerText = (currentPlayerIndex === playerCount - 1) ? "Final Showdown" : "End Turn";
     showBtn.classList.remove('hidden');
     showBtn.onclick = () => {
-        hidePlayerCards(pId);
+        document.getElementById(`player-${pId}`).classList.remove('active-glow');
+        for (let i = 0; i < 3; i++) document.getElementById(`card-${pId}-${i}`).classList.remove('reveal');
         currentPlayerIndex++;
         showBtn.classList.add('hidden');
         startTurnSequence();
     };
-    
-    document.getElementById('game-status').innerText = `${players[pId].name} VIEWING`;
 }
 
-function hidePlayerCards(pId) {
-    const playerEl = document.getElementById(`player-${pId}`);
-    playerEl.classList.remove('active-glow');
-    for (let i = 0; i < 3; i++) {
-        const card = document.getElementById(`card-${pId}-${i}`);
-        if (card) card.classList.remove('reveal');
-    }
-    AudioEngine.flip();
-}
-
-async function evaluateFinalWinner() {
+async function showFinalShowdown() {
     gameState = 'FINISHED';
-    document.getElementById('game-status').innerText = "FINAL SHOWDOWN";
-
-    // Reveal All Hands Sequentially
+    document.getElementById('game-status').innerText = "SHOWDOWN";
     for (let i = 0; i < playerCount; i++) {
-        const playerEl = document.getElementById(`player-${i}`);
-        playerEl.classList.add('active-glow');
-        for (let j = 0; j < 3; j++) {
-            const card = document.getElementById(`card-${i}-${j}`);
-            if (card) card.classList.add('reveal');
-        }
+        for (let j = 0; j < 3; j++) document.getElementById(`card-${i}-${j}`).classList.add('reveal');
         AudioEngine.flip();
         await new Promise(r => setTimeout(r, 400));
     }
-
-    players.forEach(p => p.handInfo = calculateHandScore(p.cards));
-    const winner = getWinner(players);
-
-    await new Promise(r => setTimeout(r, 600));
-
-    // Display Winner
+    const winner = determineWinner(players);
     document.getElementById(`player-${winner.id}`).classList.add('winner');
     const banner = document.getElementById('winner-banner');
     document.getElementById('win-name').innerText = winner.name;
-    document.getElementById('win-hand').innerText = winner.handInfo.name;
+    document.getElementById('win-hand').innerText = evaluateHand(winner.cards).name;
     banner.classList.remove('hidden');
-
     document.getElementById('last-winner').innerText = winner.name;
-    document.getElementById('game-status').innerText = "ROUND FINISHED";
-    
-    AudioEngine.win();
-    hapticFeedback([100, 50, 100]);
-
+    AudioEngine.win(); haptic([100, 50, 100]);
     document.getElementById('restart-btn').classList.remove('hidden');
 }
 
-function calculateHandScore(cards) {
-    const sorted = [...cards].sort((a, b) => b.rank - a.rank);
-    const ranks = sorted.map(c => c.rank);
-    const suits = sorted.map(c => c.suit);
+function evaluateHand(cards) {
+    const s = [...cards].sort((a,b) => b.rank - a.rank);
+    const r = s.map(c => c.rank), su = s.map(c => c.suit);
+    const isT = r[0] === r[1] && r[1] === r[2];
+    const isC = su[0] === su[1] && su[1] === su[2];
+    let isS = false, high = r[0];
+    if (r[0] === 14 && r[1] === 13 && r[2] === 12) { isS = true; high = 15; }
+    else if (r[0] === 14 && r[1] === 3 && r[2] === 2) { isS = true; high = 14; }
+    else if (r[0] === r[1]+1 && r[1] === r[2]+1) { isS = true; high = r[0]; }
 
-    const isTrail = ranks[0] === ranks[1] && ranks[1] === ranks[2];
-    const isColor = suits[0] === suits[1] && suits[1] === suits[2];
-    
-    let isSeq = false;
-    let seqHigh = ranks[0];
-
-    // Teen Patti Logic: AKQ highest, A23 second
-    if (ranks[0] === 14 && ranks[1] === 13 && ranks[2] === 12) { isSeq = true; seqHigh = 15; }
-    else if (ranks[0] === 14 && ranks[1] === 3 && ranks[2] === 2) { isSeq = true; seqHigh = 14; }
-    else if (ranks[0] === ranks[1] + 1 && ranks[1] === ranks[2] + 1) { isSeq = true; seqHigh = ranks[0]; }
-
-    if (isTrail) return { score: 6, name: 'TRAIL (SET)', sub: ranks[0] };
-    if (isSeq && isColor) return { score: 5, name: 'PURE SEQUENCE', sub: seqHigh };
-    if (isSeq) return { score: 4, name: 'SEQUENCE', sub: seqHigh };
-    if (isColor) return { score: 3, name: 'COLOR (FLUSH)', sub: ranks };
-    
-    const isPair = ranks[0] === ranks[1] || ranks[1] === ranks[2] || ranks[0] === ranks[2];
-    if (isPair) {
-        let pR, kick;
-        if (ranks[0] === ranks[1]) { pR = ranks[0]; kick = ranks[2]; }
-        else if (ranks[1] === ranks[2]) { pR = ranks[1]; kick = ranks[0]; }
-        else { pR = ranks[0]; kick = ranks[1]; }
-        return { score: 2, name: 'PAIR', sub: [pR, kick] };
+    if (isT) return { score: 6, name: 'TRAIL', sub: r[0] };
+    if (isS && isC) return { score: 5, name: 'PURE SEQ', sub: high };
+    if (isS) return { score: 4, name: 'SEQUENCE', sub: high };
+    if (isC) return { score: 3, name: 'COLOR', sub: r };
+    if (r[0] === r[1] || r[1] === r[2]) {
+        const pR = r[1], k = (r[0] === r[1]) ? r[2] : r[0];
+        return { score: 2, name: 'PAIR', sub: [pR, k] };
     }
-    return { score: 1, name: 'HIGH CARD', sub: ranks };
+    return { score: 1, name: 'HIGH CARD', sub: r };
 }
 
-function getWinner(pls) {
-    return pls.reduce((p, c) => {
+function determineWinner(pls) {
+    const scores = pls.map(p => ({ ...p, info: evaluateHand(p.cards) }));
+    return scores.reduce((p, c) => {
         if (!p) return c;
-        if (c.handInfo.score > p.handInfo.score) return c;
-        if (c.handInfo.score < p.handInfo.score) return p;
-        if (Array.isArray(c.handInfo.sub)) {
-            for (let i = 0; i < c.handInfo.sub.length; i++) {
-                if (c.handInfo.sub[i] > p.handInfo.sub[i]) return c;
-                if (c.handInfo.sub[i] < p.handInfo.sub[i]) return p;
-            }
-        } else {
-            if (c.handInfo.sub > p.handInfo.sub) return c;
-            if (c.handInfo.sub < p.handInfo.sub) return p;
+        if (c.info.score > p.info.score) return c;
+        if (c.info.score < p.info.score) return p;
+        const cS = Array.isArray(c.info.sub) ? c.info.sub : [c.info.sub];
+        const pS = Array.isArray(p.info.sub) ? p.info.sub : [p.info.sub];
+        for (let i = 0; i < cS.length; i++) {
+            if (cS[i] > pS[i]) return c;
+            if (cS[i] < pS[i]) return p;
         }
         return p;
     });
 }
 
-function resetGame() {
-    roundCount++;
-    document.getElementById('round-count').innerText = roundCount;
-    initTable();
-}
-
-// Initial Boot
+function resetGame() { roundCount++; document.getElementById('round-count').innerText = roundCount; initTable(); }
 window.onload = initTable;
