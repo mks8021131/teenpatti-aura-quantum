@@ -2,7 +2,9 @@ node_modules/
 build/
 *.apk
 *.log
-teenpatti_app/
-server/
-automate.js
 .gemini/
+teenpatti_app/build/
+teenpatti_app/.dart_tool/
+teenpatti_app/.packages
+teenpatti_app/.pub/
+teenpatti_app/pubspec.lock
