@@ -1,0 +1,189 @@
+:root {
+    --bg-color: #0D0D0D;
+    --neon-cyan: #00E5FF;
+    --neon-glow: 0 0 10px rgba(0, 229, 255, 0.7), 0 0 20px rgba(0, 229, 255, 0.5);
+    --card-bg: #1A1A1A;
+    --text-color: #FFFFFF;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+.game-container {
+    width: 100%;
+    max-width: 1000px;
+    padding: 20px;
+    text-align: center;
+}
+
+header h1 {
+    font-size: 3rem;
+    letter-spacing: 5px;
+    margin-bottom: 40px;
+    text-shadow: var(--neon-glow);
+}
+
+.aura {
+    color: var(--neon-cyan);
+}
+
+.screen {
+    transition: opacity 0.3s ease;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Setup Screen */
+.player-selection {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.btn-select, .btn-main {
+    background: transparent;
+    border: 2px solid var(--neon-cyan);
+    color: var(--neon-cyan);
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    border-radius: 5px;
+    box-shadow: inset 0 0 5px rgba(0, 229, 255, 0.2);
+}
+
+.btn-select:hover, .btn-main:hover {
+    background: var(--neon-cyan);
+    color: #000;
+    box-shadow: var(--neon-glow);
+}
+
+/* Game Screen */
+.players-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+.player-card-area {
+    background: var(--card-bg);
+    border: 1px solid #333;
+    border-radius: 15px;
+    padding: 20px;
+    transition: transform 0.3s ease;
+}
+
+.player-card-area.winner {
+    border-color: var(--neon-cyan);
+    box-shadow: var(--neon-glow);
+    transform: scale(1.05);
+}
+
+.player-name {
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    color: var(--neon-cyan);
+}
+
+.cards {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.card {
+    width: 60px;
+    height: 90px;
+    background: #fff;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #000;
+    font-weight: bold;
+    font-size: 1.2rem;
+    position: relative;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+    animation: dealIn 0.5s ease-out backwards;
+}
+
+.card.red {
+    color: #FF0000;
+}
+
+.card.back {
+    background: linear-gradient(45deg, #222, #444);
+    border: 2px solid var(--neon-cyan);
+    color: transparent;
+}
+
+@keyframes dealIn {
+    from {
+        transform: translateY(-50px) rotate(20deg);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0) rotate(0);
+        opacity: 1;
+    }
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.winner-banner {
+    margin-top: 30px;
+    padding: 20px;
+    border-top: 1px solid var(--neon-cyan);
+    animation: fadeIn 1s ease;
+}
+
+#winner-text {
+    color: var(--neon-cyan);
+    font-size: 2rem;
+    margin-bottom: 5px;
+}
+
+#winning-hand-type {
+    font-style: italic;
+    opacity: 0.8;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@media (max-width: 600px) {
+    .player-selection {
+        flex-direction: column;
+    }
+    .players-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}

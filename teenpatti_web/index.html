@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teen Patti Aura Quantum</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <header>
+            <h1>TEEN PATTI <span class="aura">AURA</span></h1>
+        </header>
+
+        <div id="setup-screen" class="screen">
+            <h2>Select Number of Players</h2>
+            <div class="player-selection">
+                <button class="btn-select" onclick="startGame(2)">2 Players</button>
+                <button class="btn-select" onclick="startGame(3)">3 Players</button>
+                <button class="btn-select" onclick="startGame(4)">4 Players</button>
+            </div>
+        </div>
+
+        <div id="game-screen" class="screen hidden">
+            <div id="players-container" class="players-grid"></div>
+            
+            <div class="controls">
+                <button id="deal-btn" class="btn-main" onclick="dealCards()">DEAL</button>
+                <button id="show-btn" class="btn-main hidden" onclick="showWinner()">SHOW</button>
+                <button id="restart-btn" class="btn-main hidden" onclick="resetGame()">RESTART</button>
+            </div>
+
+            <div id="winner-banner" class="winner-banner hidden">
+                <h2 id="winner-text"></h2>
+                <p id="winning-hand-type"></p>
+            </div>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
