@@ -10,10 +10,10 @@ async function run() {
         console.log(`Navigating to ${appDir}...`);
         
         console.log('Running flutter pub get...');
-        execSync('flutter pub get', { cwd: appDir, stdio: 'inherit' });
+        execSync('C:\\src\\flutter\\bin\\flutter.bat pub get', { cwd: appDir, stdio: 'inherit' });
         
         console.log('Running flutter build apk --release...');
-        execSync('flutter build apk --release', { cwd: appDir, stdio: 'inherit' });
+        execSync('C:\\src\\flutter\\bin\\flutter.bat build apk --release', { cwd: appDir, stdio: 'inherit' });
 
         console.log('\n--- STEP 2: COPYING APK TO SERVER ---');
         const apkSrc = path.join(appDir, 'build', 'app', 'outputs', 'flutter-apk', 'app-release.apk');
