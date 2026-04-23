@@ -10,32 +10,32 @@ let roundCount = 1;
 
 const HAND_RANK = { TRAIL: 6, PURE_SEQUENCE: 5, SEQUENCE: 4, COLOR: 3, PAIR: 2, HIGH_CARD: 1 };
 
-// Sound Manager (Web Audio API)
-const Sound = {
+// Improved Sound Engine
+const AudioEngine = {
     ctx: null,
     init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
-    play(freq, type = 'sine', duration = 0.1) {
+    play(freq, duration = 0.1, type = 'sine') {
         if (!document.getElementById('sound-toggle').checked) return;
         this.init();
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = type;
         osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+        gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start();
         osc.stop(this.ctx.currentTime + duration);
     },
-    deal() { this.play(400, 'sine', 0.1); },
-    flip() { this.play(600, 'triangle', 0.1); },
-    win() { [523, 659, 783, 1046].forEach((f, i) => setTimeout(() => this.play(f, 'sine', 0.5), i * 150)); }
+    deal() { this.play(300, 0.1, 'sine'); },
+    flip() { this.play(500, 0.08, 'triangle'); },
+    win() { [440, 554, 659, 880].forEach((f, i) => setTimeout(() => this.play(f, 0.4, 'sine'), i * 150)); }
 };
 
-function haptic() {
+function hapticFeedback(pattern = 50) {
     if (document.getElementById('haptic-toggle').checked && navigator.vibrate) {
-        navigator.vibrate(50);
+        navigator.vibrate(pattern);
     }
 }
 
@@ -54,7 +54,7 @@ function initTable() {
     for (let i = 0; i < playerCount; i++) {
         players.push({
             id: i,
-            name: i === 0 ? "YOU" : `PLAYER ${i + 1}`,
+            name: i === 0 ? "YOU" : `CPU ${i + 1}`,
             cards: [],
             pos: POSITIONS[i]
         });
@@ -63,16 +63,12 @@ function initTable() {
         slot.className = `player-slot ${players[i].pos}`;
         slot.id = `player-${i}`;
         slot.innerHTML = `
-            <div class="player-label">${players[i].name}</div>
-            <div class="card-group" id="cards-${i}">
-                <div class="card-box"><div class="card-side card-back"></div></div>
-                <div class="card-box"><div class="card-side card-back"></div></div>
-                <div class="card-box"><div class="card-side card-back"></div></div>
-            </div>
+            <div class="player-label-styled">${players[i].name}</div>
+            <div class="card-group" id="cards-${i}"></div>
         `;
         container.appendChild(slot);
     }
-    document.getElementById('game-status').innerText = "Ready";
+    document.getElementById('game-status').innerText = "IDLE";
 }
 
 function createDeck() {
@@ -94,56 +90,58 @@ function shuffle() {
 async function dealCards() {
     createDeck();
     shuffle();
-    haptic();
+    hapticFeedback(30);
     document.getElementById('deal-btn').classList.add('hidden');
-    document.getElementById('game-status').innerText = "Dealing...";
+    document.getElementById('game-status').innerText = "DEALING...";
 
-    // Clear previous round
     players.forEach(p => {
         document.getElementById(`cards-${p.id}`).innerHTML = '';
-        document.getElementById(`player-${p.id}`).classList.remove('winner');
+        document.getElementById(`player-${p.id}`).classList.remove('winner', 'active-glow');
     });
 
     for (let c = 0; c < 3; c++) {
         for (let p = 0; p < playerCount; p++) {
             const card = deck.pop();
             players[p].cards[c] = card;
-            addCardToUI(p, card, c);
-            Sound.deal();
-            await new Promise(r => setTimeout(r, 150));
+            spawnCard(p, card, c);
+            AudioEngine.deal();
+            await new Promise(r => setTimeout(r, 120));
         }
     }
 
-    // Reveal Player 1 (YOU)
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise(r => setTimeout(r, 400));
     revealPlayer(0);
     
     document.getElementById('show-btn').classList.remove('hidden');
-    document.getElementById('game-status').innerText = "Cards Dealt";
+    document.getElementById('game-status').innerText = "AWAITING SHOW";
 }
 
-function addCardToUI(pId, card, idx) {
+function spawnCard(pId, card, idx) {
     const container = document.getElementById(`cards-${pId}`);
     const box = document.createElement('div');
-    box.className = 'card-box anim-deal';
+    box.className = 'card-container anim-deal';
     box.id = `card-${pId}-${idx}`;
 
     const isRed = card.suit === '♥' || card.suit === '♦';
     
-    // Calculate offsets for deal animation from center
+    // Calculate vector from center deck
     const slotRect = document.getElementById(`player-${pId}`).getBoundingClientRect();
     const tableRect = document.getElementById('game-table').getBoundingClientRect();
-    const tx = (tableRect.left + tableRect.width/2) - (slotRect.left + slotRect.width/2);
-    const ty = (tableRect.top + tableRect.height/2) - (slotRect.top + slotRect.height/2);
+    const centerX = tableRect.left + tableRect.width / 2;
+    const centerY = tableRect.top + tableRect.height / 2;
     
-    box.style.setProperty('--dx', `${tx}px`);
-    box.style.setProperty('--dy', `${ty}px`);
+    const dx = centerX - (slotRect.left + slotRect.width / 2);
+    const dy = centerY - (slotRect.top + slotRect.height / 2);
+    
+    box.style.setProperty('--dx', `${dx}px`);
+    box.style.setProperty('--dy', `${dy}px`);
+    box.style.setProperty('--dr', `${Math.random() * 40 - 20}deg`); // Random tilt for realism
 
     box.innerHTML = `
-        <div class="card-side card-back"></div>
-        <div class="card-side card-front ${isRed ? 'red' : ''}">
+        <div class="card-face card-back"></div>
+        <div class="card-face card-front ${isRed ? 'red' : ''}">
             <div class="rank">${card.value}</div>
-            <div class="suit">${card.suit}</div>
+            <div class="suit-center">${card.suit}</div>
             <div class="suit-mini">${card.suit}</div>
         </div>
     `;
@@ -151,25 +149,26 @@ function addCardToUI(pId, card, idx) {
 }
 
 function revealPlayer(pId) {
+    const playerEl = document.getElementById(`player-${pId}`);
+    playerEl.classList.add('active-glow');
     for (let i = 0; i < 3; i++) {
         const card = document.getElementById(`card-${pId}-${i}`);
         if (card) {
             setTimeout(() => {
-                card.classList.add('flipped');
-                Sound.flip();
-            }, i * 150);
+                card.classList.add('reveal');
+                AudioEngine.flip();
+            }, i * 120);
         }
     }
 }
 
 async function showWinner() {
     document.getElementById('show-btn').classList.add('hidden');
-    document.getElementById('game-status').innerText = "Evaluating...";
+    document.getElementById('game-status').innerText = "EVALUATING...";
 
-    // Reveal others
     for (let i = 1; i < playerCount; i++) {
         revealPlayer(i);
-        await new Promise(r => setTimeout(r, 400));
+        await new Promise(r => setTimeout(r, 350));
     }
 
     players.forEach(p => p.handInfo = evaluateHand(p.cards));
@@ -177,7 +176,6 @@ async function showWinner() {
 
     await new Promise(r => setTimeout(r, 600));
 
-    // Show banner
     document.getElementById(`player-${winner.id}`).classList.add('winner');
     const banner = document.getElementById('winner-banner');
     document.getElementById('win-name').innerText = winner.name;
@@ -185,10 +183,10 @@ async function showWinner() {
     banner.classList.remove('hidden');
 
     document.getElementById('last-winner').innerText = winner.name;
-    document.getElementById('game-status').innerText = "Finished";
+    document.getElementById('game-status').innerText = "FINISHED";
     
-    Sound.win();
-    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    AudioEngine.win();
+    hapticFeedback([100, 50, 100]);
 
     document.getElementById('restart-btn').classList.remove('hidden');
 }
@@ -251,5 +249,4 @@ function determineWinner(pls) {
     });
 }
 
-// Start
 window.onload = initTable;

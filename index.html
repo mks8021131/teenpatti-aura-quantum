@@ -9,12 +9,12 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Left Sidebar: Controls -->
+        <!-- Sidebar: Command Center -->
         <aside class="sidebar sidebar-left">
-            <h2>Controls</h2>
+            <h2>COMMAND</h2>
             
             <div class="control-group">
-                <span class="label">Players</span>
+                <span class="label">Table Size</span>
                 <div class="player-selector">
                     <button class="selector-btn" onclick="setPlayerCount(2)">2</button>
                     <button class="selector-btn" onclick="setPlayerCount(3)">3</button>
@@ -23,7 +23,7 @@
             </div>
 
             <div class="control-group">
-                <span class="label">Settings</span>
+                <span class="label">Experience</span>
                 <div class="toggle-item">
                     <span>Sound</span>
                     <input type="checkbox" id="sound-toggle" checked>
@@ -34,44 +34,44 @@
                 </div>
             </div>
 
-            <button class="btn-primary" id="deal-btn" onclick="dealCards()">Deal Cards</button>
-            <button class="btn-primary hidden" id="show-btn" onclick="showWinner()">Show Winner</button>
-            <button class="btn-primary hidden" id="restart-btn" onclick="resetGame()">New Round</button>
+            <button class="btn-primary" id="deal-btn" onclick="dealCards()">DEAL HAND</button>
+            <button class="btn-primary hidden" id="show-btn" onclick="showWinner()">SHOW HANDS</button>
+            <button class="btn-primary hidden" id="restart-btn" onclick="resetGame()">NEXT ROUND</button>
         </aside>
 
-        <!-- Center Area: Game Table -->
+        <!-- Main Game: The Table -->
         <main class="main-game">
             <div class="game-table" id="game-table">
-                <div class="center-deck">
-                    <div class="card-box">
-                        <div class="card-side card-back"></div>
-                    </div>
+                <!-- Center Focus Focal Point -->
+                <div class="center-focus">
+                    <div class="deck-stack"></div>
                 </div>
+
                 <div id="players-container">
-                    <!-- Slots will be injected here -->
+                    <!-- Dynamic slots injected here -->
                 </div>
             </div>
 
-            <!-- Winner Banner -->
+            <!-- Immersive Winner Overlay -->
             <div id="winner-banner" class="winner-banner hidden">
                 <div id="win-name">PLAYER 1</div>
-                <div id="win-hand">TRAIL (SET)</div>
+                <div id="win-hand">TRAIL</div>
             </div>
         </main>
 
-        <!-- Right Sidebar: Info -->
+        <!-- Sidebar: Intelligence -->
         <aside class="sidebar sidebar-right">
-            <h2>Game Info</h2>
+            <h2>INTELLIGENCE</h2>
             <div class="info-list">
-                <div class="info-item">
-                    <span class="label">Status</span>
-                    <span class="val" id="game-status">Waiting</span>
+                <div class="info-card">
+                    <span class="label">Game Status</span>
+                    <span class="val" id="game-status">IDLE</span>
                 </div>
-                <div class="info-item">
-                    <span class="label">Last Winner</span>
-                    <span class="val" id="last-winner">None</span>
+                <div class="info-card">
+                    <span class="label">Last Victory</span>
+                    <span class="val" id="last-winner">NONE</span>
                 </div>
-                <div class="info-item">
+                <div class="info-card">
                     <span class="label">Round</span>
                     <span class="val" id="round-count">1</span>
                 </div>
@@ -79,6 +79,7 @@
         </aside>
     </div>
 
+    <!-- Live Auto-Reload Dashboard Injection -->
     <script src="game.js"></script>
 </body>
 </html>
