@@ -31,7 +31,36 @@
 
     <!-- Main Game Engine -->
     <section class="game-section" id="play">
-        <div class="app-container">
+        <div class="app-container" style="position: relative;">
+            <!-- Player Name Setup Overlay -->
+            <div id="setup-overlay" class="setup-overlay">
+                <div class="setup-content">
+                    <h2>PLAYER IDENTITIES</h2>
+                    <p style="opacity: 0.5; margin-bottom: 30px; letter-spacing: 2px;">Enter names to personalize your table</p>
+                    
+                    <div class="setup-inputs">
+                        <div class="input-group">
+                            <label>You (Player 1)</label>
+                            <input type="text" id="name-p1" placeholder="Enter name" maxlength="12">
+                        </div>
+                        <div class="input-group">
+                            <label id="label-p2">Opponent (Player 2)</label>
+                            <input type="text" id="name-p2" placeholder="Enter name" maxlength="12">
+                        </div>
+                        <div class="input-group" id="group-p3">
+                            <label id="label-p3">Opponent (Player 3)</label>
+                            <input type="text" id="name-p3" placeholder="Enter name" maxlength="12">
+                        </div>
+                        <div class="input-group" id="group-p4">
+                            <label id="label-p4">Opponent (Player 4)</label>
+                            <input type="text" id="name-p4" placeholder="Enter name" maxlength="12">
+                        </div>
+                    </div>
+                    
+                    <button class="btn-primary" onclick="confirmNames()" style="width: auto; padding: 18px 80px; margin-top: 30px;">Initialize Game</button>
+                </div>
+            </div>
+
             <!-- Game Configuration Panel -->
             <aside class="sidebar sidebar-left">
                 <h2>Game Engine</h2>

@@ -10,6 +10,7 @@ let roundCount = 1;
 let currentPlayerIndex = 0;
 let gameState = 'IDLE';
 let systemMode = 'cpu'; 
+let playerNames = ["YOU", "Player 2", "Player 3", "Player 4"];
 
 // Premium Audio Engine
 const AudioEngine = {
@@ -42,6 +43,12 @@ function setSystemMode(mode) {
     systemMode = mode;
     document.getElementById('mode-cpu').classList.toggle('active', mode === 'cpu');
     document.getElementById('mode-pass').classList.toggle('active', mode === 'pass');
+    
+    // Update labels in setup based on mode
+    document.getElementById('label-p2').innerText = mode === 'cpu' ? "CPU 2" : "Player 2";
+    document.getElementById('label-p3').innerText = mode === 'cpu' ? "CPU 3" : "Player 3";
+    document.getElementById('label-p4').innerText = mode === 'cpu' ? "CPU 4" : "Player 4";
+    
     initTable();
 }
 
@@ -51,6 +58,11 @@ function setPlayerCount(num) {
     document.querySelectorAll('.selector-btn').forEach(btn => {
         btn.classList.toggle('active', parseInt(btn.innerText) === num);
     });
+    
+    // Update setup inputs visibility
+    document.getElementById('group-p3').style.display = num >= 3 ? 'flex' : 'none';
+    document.getElementById('group-p4').style.display = num >= 4 ? 'flex' : 'none';
+    
     initTable();
 }
 
@@ -61,11 +73,13 @@ function initTable() {
     currentPlayerIndex = 0;
     gameState = 'IDLE';
 
+    document.getElementById('setup-overlay').classList.remove('hidden');
+
     for (let i = 0; i < playerCount; i++) {
         const pId = i + 1;
         players.push({
             id: pId,
-            name: systemMode === 'cpu' ? (i === 0 ? "YOU" : `CPU ${pId}`) : `PLAYER ${pId}`,
+            name: "", // Will be filled on confirm
             cards: [],
             pos: POSITIONS[i],
             handInfo: null
@@ -76,7 +90,7 @@ function initTable() {
         slot.id = `player-${pId}`;
         
         slot.innerHTML = `
-            <div class="player-label">${players[i].name}</div>
+            <div class="player-label" id="label-display-${pId}">...</div>
             <div class="card-group" id="player${pId}-cards"></div>
         `;
         container.appendChild(slot);
@@ -87,6 +101,21 @@ function initTable() {
     document.getElementById('restart-btn').classList.add('hidden');
     document.getElementById('winner-banner').classList.add('hidden');
     document.getElementById('pass-overlay').classList.add('hidden');
+}
+
+function confirmNames() {
+    playerNames[0] = document.getElementById('name-p1').value.trim() || "YOU";
+    playerNames[1] = document.getElementById('name-p2').value.trim() || (systemMode === 'cpu' ? "CPU 2" : "Player 2");
+    playerNames[2] = document.getElementById('name-p3').value.trim() || (systemMode === 'cpu' ? "CPU 3" : "Player 3");
+    playerNames[3] = document.getElementById('name-p4').value.trim() || (systemMode === 'cpu' ? "CPU 4" : "Player 4");
+
+    players.forEach((p, i) => {
+        p.name = playerNames[i];
+        document.getElementById(`label-display-${p.id}`).innerText = p.name;
+    });
+
+    document.getElementById('setup-overlay').classList.add('hidden');
+    haptic(100);
 }
 
 function createDeck() {
@@ -105,7 +134,6 @@ function shuffle() {
     }
 }
 
-// --- MANDATORY CARD COMPONENT ---
 function createCardElement(card) {
     const isRed = card.suit === '♥' || card.suit === '♦';
     const cardEl = document.createElement('div');
@@ -119,8 +147,6 @@ function createCardElement(card) {
     return cardEl;
 }
 
-const delay = (ms) => new Promise(res => setTimeout(ms, res));
-
 async function dealCards() {
     if (gameState !== 'IDLE') return;
     AudioEngine.init();
@@ -132,13 +158,11 @@ async function dealCards() {
     document.getElementById('deal-btn').classList.add('hidden');
     document.getElementById('game-status').innerText = "DEALING...";
 
-    // CLEAR ALL CONTAINERS
     players.forEach(p => {
         document.getElementById(`player${p.id}-cards`).innerHTML = '';
         document.getElementById(`player-${p.id}`).classList.remove('winner', 'active-glow');
     });
 
-    // CONTROLLED ASYNC DEAL SYSTEM
     for (let i = 0; i < 3; i++) {
         for (let player of players) {
             await new Promise(r => setTimeout(r, 300));
@@ -148,7 +172,6 @@ async function dealCards() {
             const container = document.getElementById(`player${player.id}-cards`);
             const cardEl = createCardElement(card);
             
-            // Animation setup
             const slotRect = document.getElementById(`player-${player.id}`).getBoundingClientRect();
             const tableRect = document.querySelector('.table-surface').getBoundingClientRect();
             const dx = (tableRect.width/2) - (slotRect.left - tableRect.left + slotRect.width/2);
@@ -159,9 +182,8 @@ async function dealCards() {
             cardEl.style.setProperty('--dy', `${dy}px`);
             cardEl.style.setProperty('--dr', `${Math.random() * 20 - 10}deg`);
 
-            // Hide cards for other players if in pass-and-play
             if (systemMode === 'pass' || (systemMode === 'cpu' && player.id !== 1)) {
-                cardEl.classList.add('hide-content'); // We'll handle this in reveal
+                cardEl.classList.add('hide-content');
             }
 
             container.appendChild(cardEl);
@@ -169,13 +191,11 @@ async function dealCards() {
         }
     }
 
-    // PAUSE AFTER DEALING
     await new Promise(r => setTimeout(r, 1000));
 
     if (systemMode === 'pass') {
         startMultiplayerFlow();
     } else {
-        // VS CPU: Auto evaluate
         document.getElementById('game-status').innerText = "SHOWDOWN";
         await evaluateWinner();
     }
@@ -199,7 +219,6 @@ function revealCurrentPlayer() {
     const player = players[currentPlayerIndex];
     const container = document.getElementById(`player${player.id}-cards`);
     
-    // Reveal cards logic
     const cards = container.querySelectorAll('.card');
     cards.forEach((el, idx) => {
         setTimeout(() => {
@@ -212,9 +231,8 @@ function revealCurrentPlayer() {
     
     const showBtn = document.getElementById('show-btn');
     showBtn.classList.remove('hidden');
-    showBtn.innerText = (currentPlayerIndex === playerCount - 1) ? "Final Show" : "Next Player";
+    showBtn.innerText = (currentPlayerIndex === playerCount - 1) ? "Final Show" : "End Turn";
     showBtn.onclick = () => {
-        // Hide and move to next
         cards.forEach(el => el.classList.add('hide-content'));
         document.getElementById(`player-${player.id}`).classList.remove('active-glow');
         currentPlayerIndex++;
@@ -231,7 +249,6 @@ function revealCurrentPlayer() {
 async function evaluateWinner() {
     gameState = 'FINISHED';
     
-    // Reveal all CPU/Hidden cards
     for (let player of players) {
         const container = document.getElementById(`player${player.id}-cards`);
         container.querySelectorAll('.card').forEach(c => c.classList.remove('hide-content'));
@@ -254,16 +271,14 @@ async function evaluateWinner() {
         return p;
     });
 
-    // 1 SECOND PAUSE BEFORE WINNER DISPLAY
     await new Promise(r => setTimeout(r, 1000));
 
-    // HIGHLIGHT WINNER
     const winnerEl = document.getElementById(`player-${winner.id}`);
     winnerEl.classList.add('winner');
     
     const banner = document.getElementById('winner-banner');
     document.getElementById('win-name').innerText = `Winner: ${winner.name}`;
-    document.getElementById('win-hand').innerText = ""; // Removed hand type text
+    document.getElementById('win-hand').innerText = ""; 
     banner.classList.remove('hidden');
 
     document.getElementById('last-winner').innerText = winner.name;
