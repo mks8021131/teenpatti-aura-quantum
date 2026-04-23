@@ -3,42 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aura Quantum Teen Patti | Premium Brand Experience</title>
+    <title>Aura Quantum Teen Patti | Ultra-Premium Release</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Navbar -->
+    <!-- Premium Navbar -->
     <nav>
         <div class="logo">AURA <span>QUANTUM</span></div>
         <div class="nav-links">
-            <a href="#home">Brand</a>
-            <a href="#play">Live Game</a>
-            <a href="#features">Innovation</a>
+            <a href="#home">Lobby</a>
+            <a href="#play">Tables</a>
             <a href="#download" class="btn-apk-nav">Download APK</a>
         </div>
     </nav>
 
-    <!-- Hero Section -->
+    <!-- Hero Identity Section -->
     <section class="hero" id="home">
         <div class="hero-content">
             <h1>Aura Quantum <span>Teen Patti</span></h1>
-            <p>The definitive luxury offline Teen Patti experience. Built by Aura Quantum, featuring cinematic physics, same-device multiplayer privacy, and the industry-standard AKQ logic.</p>
+            <p>The definitive luxury experience in offline card gaming. Built for champions, powered by the Aura Quantum Engine.</p>
             <div class="hero-btns">
-                <button class="btn-primary" style="width: auto; padding: 15px 50px;" onclick="document.getElementById('play').scrollIntoView()">Play Now</button>
+                <button class="btn-primary" style="width: auto; padding: 18px 60px;" onclick="document.getElementById('play').scrollIntoView()">Play Now</button>
             </div>
         </div>
     </section>
 
-    <!-- Game Section -->
+    <!-- Main Game Engine -->
     <section class="game-section" id="play">
         <div class="app-container">
-            <!-- Left Sidebar -->
+            <!-- Game Configuration Panel -->
             <aside class="sidebar sidebar-left">
                 <h2>Game Engine</h2>
                 
                 <div class="control-group">
-                    <span class="label">System Mode</span>
+                    <span class="label">Switch System Mode</span>
                     <div class="system-switch">
                         <button class="switch-btn active" id="mode-cpu" onclick="setSystemMode('cpu')">VS CPU</button>
                         <button class="switch-btn" id="mode-pass" onclick="setSystemMode('pass')">PASS & PLAY</button>
@@ -46,7 +45,7 @@
                 </div>
 
                 <div class="control-group">
-                    <span class="label">Players at Table</span>
+                    <span class="label">Seats at Table</span>
                     <div class="player-selector">
                         <button class="selector-btn" onclick="setPlayerCount(2)">2</button>
                         <button class="selector-btn" onclick="setPlayerCount(3)">3</button>
@@ -55,76 +54,84 @@
                 </div>
 
                 <div class="control-group">
-                    <span class="label">Settings</span>
+                    <span class="label">Hardware Link</span>
                     <div class="toggle-item">
-                        <span>Audio</span>
+                        <span style="font-size: 0.8rem; font-weight: 700; opacity: 0.7;">Audio Feedback</span>
                         <input type="checkbox" id="sound-toggle" checked>
                     </div>
                     <div class="toggle-item">
-                        <span>Haptic</span>
+                        <span style="font-size: 0.8rem; font-weight: 700; opacity: 0.7;">Haptic Engine</span>
                         <input type="checkbox" id="haptic-toggle" checked>
                     </div>
                 </div>
 
                 <button class="btn-primary" id="deal-btn" onclick="dealCards()">Deal Hand</button>
-                <button class="btn-primary hidden" id="show-btn">Next Player</button>
-                <button class="btn-primary hidden" id="restart-btn" onclick="resetGame()">New Round</button>
+                <button class="btn-primary hidden" id="show-btn">Action Button</button>
+                <button class="btn-primary hidden" id="restart-btn" onclick="resetGame()">Next Round</button>
             </aside>
 
-            <!-- Main Table Area -->
+            <!-- Physical 3D Table Area -->
             <main class="main-game">
                 <div class="table-surface">
+                    <!-- Central focal stack -->
                     <div class="center-deck"></div>
+                    
+                    <!-- Dynamic player rendering -->
                     <div id="players-container"></div>
                 </div>
 
-                <!-- Turn Transition Overlay -->
+                <!-- Pass-and-Play Security Overlay -->
                 <div id="pass-overlay" class="pass-overlay hidden">
-                    <p style="opacity: 0.5; letter-spacing: 5px; margin-bottom: 10px;">HANDING OVER TO</p>
-                    <h2 id="pass-player-name" style="font-size: 3.5rem; font-weight: 900; color: var(--neon-cyan); letter-spacing: 5px; margin-bottom: 30px;">PLAYER 1</h2>
-                    <button class="btn-primary" style="width: auto; padding: 15px 50px;" onclick="revealCurrentPlayer()">Reveal Cards</button>
+                    <p style="opacity: 0.4; letter-spacing: 6px; margin-bottom: 10px; text-transform: uppercase;">Pass Device To</p>
+                    <h2 id="pass-player-name" style="font-size: 4rem; font-weight: 900; color: var(--neon-cyan); letter-spacing: 8px; margin-bottom: 40px; text-transform: uppercase;">PLAYER 1</h2>
+                    <button class="btn-primary" style="width: auto; padding: 18px 60px;" onclick="revealCurrentPlayer()">Reveal Cards</button>
                 </div>
 
-                <!-- Winner Overlay -->
+                <!-- Global Winner Banner -->
                 <div id="winner-banner" class="winner-banner hidden">
-                    <h2 id="win-name" style="font-size: 4.5rem; font-weight: 950; color: var(--gold); letter-spacing: 5px; margin-bottom: 5px;">PLAYER 1</h2>
-                    <p id="win-hand" style="font-size: 1.2rem; opacity: 0.6; letter-spacing: 10px;">TRAIL (SET)</p>
+                    <h2 id="win-name">PLAYER 1</h2>
+                    <p id="win-hand">TRAIL (SET)</p>
                 </div>
             </main>
 
-            <!-- Right Sidebar -->
+            <!-- Live Intelligence Panel -->
             <aside class="sidebar sidebar-right">
                 <h2>Intelligence</h2>
                 <div class="control-group">
-                    <span class="label">Table Status</span>
-                    <div id="game-status" style="font-weight: 900; color: var(--neon-cyan); font-size: 1.1rem;">READY</div>
+                    <span class="label">Current Status</span>
+                    <div id="game-status" style="font-weight: 950; color: var(--neon-cyan); font-size: 1.1rem; letter-spacing: 1px;">READY</div>
                 </div>
                 <div class="control-group">
-                    <span class="label">Session Winner</span>
-                    <div id="last-winner" style="font-weight: 900; font-size: 1.1rem;">NONE</div>
+                    <span class="label">Last Victory</span>
+                    <div id="last-winner" style="font-weight: 950; font-size: 1.1rem; letter-spacing: 1px;">NONE</div>
                 </div>
                 <div class="control-group">
-                    <span class="label">Round Count</span>
-                    <div id="round-count" style="font-weight: 900; color: var(--neon-cyan); font-size: 1.1rem;">1</div>
+                    <span class="label">Session Stats</span>
+                    <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border);">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <span class="label" style="margin:0;">Round</span>
+                            <span id="round-count" style="font-weight:900; color:var(--neon-cyan);">1</span>
+                        </div>
+                    </div>
                 </div>
             </aside>
         </div>
     </section>
 
-    <!-- Features -->
-    <section class="game-section" id="features" style="background: var(--bg-dark); padding-top: 0;">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; padding: 0 10%;">
-            <div style="background: var(--glass); padding: 40px; border-radius: 30px; border: 1px solid var(--border);">
-                <h3 style="color: var(--neon-cyan); margin-bottom: 15px;">Brand Logic</h3>
-                <p style="opacity: 0.5;">Proprietary Aura Quantum evaluation engine for perfect Teen Patti ranking.</p>
+    <!-- Brand Innovation Section -->
+    <section class="game-section" style="padding-top: 0;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; padding: 0 10%;">
+            <div style="background: var(--glass); padding: 50px; border-radius: 40px; border: 1px solid var(--glass-border); text-align: center;">
+                <h3 style="color: var(--neon-cyan); font-size: 1.5rem; margin-bottom: 15px; text-transform: uppercase;">Quantum AI</h3>
+                <p style="opacity: 0.4; line-height: 1.8;">Advanced CPU logic that mimics real player behavior for the ultimate challenge.</p>
             </div>
-            <div style="background: var(--glass); padding: 40px; border-radius: 30px; border: 1px solid var(--border);">
-                <h3 style="color: var(--neon-cyan); margin-bottom: 15px;">Cinematic UI</h3>
-                <p style="opacity: 0.5;">Physics-based dealing with random tilt and realistic table lighting.</p>
+            <div style="background: var(--glass); padding: 50px; border-radius: 40px; border: 1px solid var(--glass-border); text-align: center;">
+                <h3 style="color: var(--neon-cyan); font-size: 1.5rem; margin-bottom: 15px; text-transform: uppercase;">Vivid Motion</h3>
+                <p style="opacity: 0.4; line-height: 1.8;">60FPS cinematic animations and physics-based card interactions.</p>
             </div>
-            <div style="background: var(--glass); padding: 40px; border-radius: 30px; border: 1px solid var(--border);">
-                <h3 style="color: var(--neon-cyan); margin-bottom: 15px;">Multi-System</h3>
-                <p style="opacity: 0.5;">Switch instantly between VS CPU and Pass & Play modes.</p>
+            <div style="background: var(--glass); padding: 50px; border-radius: 40px; border: 1px solid var(--glass-border); text-align: center;">
+                <h3 style="color: var(--neon-cyan); font-size: 1.5rem; margin-bottom: 15px; text-transform: uppercase;">Security</h3>
+                <p style="opacity: 0.4; line-height: 1.8;">High-privacy multiplayer mode ensuring your cards stay hidden from rivals.</p>
             </div>
         </div>
     </section>
