@@ -42,7 +42,13 @@ function hapticFeedback(pattern = 50) {
 function setPlayerCount(num) {
     playerCount = num;
     document.querySelectorAll('.selector-btn').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
+    // Find the button that was clicked and add active class
+    // In this case, we rely on the inline onclick passing the number
+    const btns = document.querySelectorAll('.selector-btn');
+    if (num === 2) btns[0].classList.add('active');
+    else if (num === 3) btns[1].classList.add('active');
+    else if (num === 4) btns[2].classList.add('active');
+    
     initTable();
 }
 
@@ -62,13 +68,22 @@ function initTable() {
         const slot = document.createElement('div');
         slot.className = `player-slot ${players[i].pos}`;
         slot.id = `player-${i}`;
+        
+        // Initial state: Show 3 card-backs so table isn't empty
+        let initialCardsHTML = '';
+        for(let j=0; j<3; j++) {
+            initialCardsHTML += `<div class="card-container"><div class="card-face card-back"></div></div>`;
+        }
+
         slot.innerHTML = `
             <div class="player-label-styled">${players[i].name}</div>
-            <div class="card-group" id="cards-${i}"></div>
+            <div class="card-group" id="cards-${i}">
+                ${initialCardsHTML}
+            </div>
         `;
         container.appendChild(slot);
     }
-    document.getElementById('game-status').innerText = "IDLE";
+    document.getElementById('game-status').innerText = "READY";
 }
 
 function createDeck() {
@@ -94,6 +109,7 @@ async function dealCards() {
     document.getElementById('deal-btn').classList.add('hidden');
     document.getElementById('game-status').innerText = "DEALING...";
 
+    // Clear and prepare for animation
     players.forEach(p => {
         document.getElementById(`cards-${p.id}`).innerHTML = '';
         document.getElementById(`player-${p.id}`).classList.remove('winner', 'active-glow');
@@ -105,7 +121,7 @@ async function dealCards() {
             players[p].cards[c] = card;
             spawnCard(p, card, c);
             AudioEngine.deal();
-            await new Promise(r => setTimeout(r, 120));
+            await new Promise(r => setTimeout(r, 150));
         }
     }
 
@@ -124,7 +140,6 @@ function spawnCard(pId, card, idx) {
 
     const isRed = card.suit === '♥' || card.suit === '♦';
     
-    // Calculate vector from center deck
     const slotRect = document.getElementById(`player-${pId}`).getBoundingClientRect();
     const tableRect = document.getElementById('game-table').getBoundingClientRect();
     const centerX = tableRect.left + tableRect.width / 2;
@@ -135,7 +150,7 @@ function spawnCard(pId, card, idx) {
     
     box.style.setProperty('--dx', `${dx}px`);
     box.style.setProperty('--dy', `${dy}px`);
-    box.style.setProperty('--dr', `${Math.random() * 40 - 20}deg`); // Random tilt for realism
+    box.style.setProperty('--dr', `${Math.random() * 30 - 15}deg`);
 
     box.innerHTML = `
         <div class="card-face card-back"></div>
@@ -157,7 +172,7 @@ function revealPlayer(pId) {
             setTimeout(() => {
                 card.classList.add('reveal');
                 AudioEngine.flip();
-            }, i * 120);
+            }, i * 150);
         }
     }
 }
@@ -168,7 +183,7 @@ async function showWinner() {
 
     for (let i = 1; i < playerCount; i++) {
         revealPlayer(i);
-        await new Promise(r => setTimeout(r, 350));
+        await new Promise(r => setTimeout(r, 400));
     }
 
     players.forEach(p => p.handInfo = evaluateHand(p.cards));
