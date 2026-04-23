@@ -1,6 +1,6 @@
 const SUITS = ['♠', '♥', '♦', '♣'];
-const VALUES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-const VALUE_MAP = { '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14 };
+const VALUES = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+const VALUE_MAP = { 'A': 14, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13 };
 const POSITIONS = ['slot-bottom', 'slot-top', 'slot-left', 'slot-right'];
 
 let deck = [];
@@ -9,27 +9,27 @@ let playerCount = 4;
 let roundCount = 1;
 let currentPlayerIndex = 0;
 let gameState = 'IDLE';
-let systemMode = 'cpu'; // 'cpu' or 'pass'
+let systemMode = 'cpu'; 
 
-// Audio Engine
+// Premium Audio Engine
 const AudioEngine = {
     ctx: null,
     init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); if (this.ctx.state === 'suspended') this.ctx.resume(); },
-    play(freq, dur = 0.1, type = 'sine') {
+    play(freq, dur = 0.1, type = 'sine', vol = 0.05) {
         if (!document.getElementById('sound-toggle').checked) return;
         this.init();
         const osc = this.ctx.createOscillator();
         const g = this.ctx.createGain();
         osc.type = type;
         osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-        g.gain.setValueAtTime(0.05, this.ctx.currentTime);
+        g.gain.setValueAtTime(vol, this.ctx.currentTime);
         g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
         osc.connect(g); g.connect(this.ctx.destination);
         osc.start(); osc.stop(this.ctx.currentTime + dur);
     },
-    deal() { this.play(300, 0.1); },
-    flip() { this.play(500, 0.08, 'triangle'); },
-    win() { [523, 659, 783, 1046].forEach((f, i) => setTimeout(() => this.play(f, 0.4), i * 150)); }
+    deal() { this.play(300, 0.1, 'sine', 0.06); },
+    flip() { this.play(500, 0.08, 'triangle', 0.04); },
+    win() { [523, 659, 783, 1046].forEach((f, i) => setTimeout(() => this.play(f, 0.5, 'sine', 0.05), i * 150)); }
 };
 
 function haptic(p = 50) { if (document.getElementById('haptic-toggle').checked && navigator.vibrate) navigator.vibrate(p); }
@@ -71,6 +71,7 @@ function initTable() {
         slot.className = `player-slot ${players[i].pos}`;
         slot.id = `player-${i}`;
         
+        // Initial setup with card-backs for premium feel
         slot.innerHTML = `
             <div class="player-label">${players[i].name}</div>
             <div class="card-group" id="cards-${i}">
@@ -91,7 +92,11 @@ function initTable() {
 
 function createDeck() {
     deck = [];
-    for (let s of SUITS) for (let v of VALUES) deck.push({ suit: s, value: v, rank: VALUE_MAP[v] });
+    for (let s of SUITS) {
+        for (let v of VALUES) {
+            deck.push({ suit: s, value: v, rank: VALUE_MAP[v] });
+        }
+    }
 }
 
 function shuffle() {
@@ -109,7 +114,7 @@ async function dealCards() {
     haptic(30);
     gameState = 'DEALING';
     document.getElementById('deal-btn').classList.add('hidden');
-    document.getElementById('game-status').innerText = "DEALING...";
+    document.getElementById('game-status').innerText = "DEALING HANDS...";
 
     players.forEach(p => {
         document.getElementById(`cards-${p.id}`).innerHTML = '';
@@ -158,9 +163,9 @@ function spawnCard(pId, card, idx) {
     box.innerHTML = `
         <div class="card-face card-back"></div>
         <div class="card-face card-front ${isRed ? 'red' : ''}">
-            <div class="rank">${card.value}</div>
-            <div class="suit-center" style="font-size:2rem;align-self:center;">${card.suit}</div>
-            <div class="rank" style="transform:rotate(180deg)">${card.value}</div>
+            <div class="top-left">${card.value}</div>
+            <div class="suit-center">${card.suit}</div>
+            <div class="bottom-right">${card.value}</div>
         </div>
     `;
     container.appendChild(box);
@@ -193,7 +198,7 @@ function revealCurrentPlayer() {
     revealPlayer(pId);
     
     const showBtn = document.getElementById('show-btn');
-    showBtn.innerText = (currentPlayerIndex === playerCount - 1) ? "Showdown" : "End Turn";
+    showBtn.innerText = (currentPlayerIndex === playerCount - 1) ? "Final Showdown" : "End Turn";
     showBtn.classList.remove('hidden');
     showBtn.onclick = () => {
         document.getElementById(`player-${pId}`).classList.remove('active-glow');
@@ -207,7 +212,7 @@ function revealCurrentPlayer() {
 async function evaluateFinalWinner() {
     gameState = 'FINISHED';
     document.getElementById('show-btn').classList.add('hidden');
-    document.getElementById('game-status').innerText = "SHOWDOWN";
+    document.getElementById('game-status').innerText = "REVEALING ALL...";
 
     for (let i = 0; i < playerCount; i++) {
         revealPlayer(i);
@@ -228,13 +233,13 @@ async function evaluateFinalWinner() {
         return p;
     });
 
-    await new Promise(r => setTimeout(r, 600));
+    await new Promise(r => setTimeout(r, 800));
     document.getElementById(`player-${winner.id}`).classList.add('winner');
     document.getElementById('win-name').innerText = winner.name;
     document.getElementById('win-hand').innerText = winner.handInfo.name;
     document.getElementById('winner-banner').classList.remove('hidden');
     document.getElementById('last-winner').innerText = winner.name;
-    document.getElementById('game-status').innerText = "FINISHED";
+    document.getElementById('game-status').innerText = "ROUND COMPLETE";
     AudioEngine.win(); haptic([100, 50, 100]);
     document.getElementById('restart-btn').classList.remove('hidden');
 }
@@ -249,10 +254,10 @@ function calculateScore(cards) {
     else if (r[0] === 14 && r[1] === 3 && r[2] === 2) { isS = true; high = 14; }
     else if (r[0] === r[1]+1 && r[1] === r[2]+1) { isS = true; high = r[0]; }
 
-    if (isT) return { score: 6, name: 'TRAIL', sub: r[0] };
-    if (isS && isC) return { score: 5, name: 'PURE SEQ', sub: high };
+    if (isT) return { score: 6, name: 'TRAIL (SET)', sub: r[0] };
+    if (isS && isC) return { score: 5, name: 'PURE SEQUENCE', sub: high };
     if (isS) return { score: 4, name: 'SEQUENCE', sub: high };
-    if (isC) return { score: 3, name: 'COLOR', sub: r };
+    if (isC) return { score: 3, name: 'COLOR (FLUSH)', sub: r };
     if (r[0] === r[1] || r[1] === r[2]) {
         const pR = r[1], k = (r[0] === r[1]) ? r[2] : r[0];
         return { score: 2, name: 'PAIR', sub: [pR, k] };
