@@ -7,17 +7,12 @@ let deck = [];
 let players = [];
 let playerCount = 4;
 let roundCount = 1;
-let currentPlayerIndex = 0;
 let gameState = 'IDLE';
 let systemMode = 'cpu'; 
 
-// Premium Audio Engine
 const AudioEngine = {
     ctx: null,
-    init() { 
-        if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); 
-        if (this.ctx.state === 'suspended') this.ctx.resume(); 
-    },
+    init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); if (this.ctx.state === 'suspended') this.ctx.resume(); },
     play(freq, dur = 0.1, type = 'sine', vol = 0.05) {
         if (!document.getElementById('sound-toggle').checked) return;
         this.init();
@@ -31,7 +26,6 @@ const AudioEngine = {
         osc.start(); osc.stop(this.ctx.currentTime + dur);
     },
     deal() { this.play(300, 0.1, 'sine', 0.06); },
-    flip() { this.play(500, 0.08, 'triangle', 0.04); },
     win() { [523, 659, 783, 1046].forEach((f, i) => setTimeout(() => this.play(f, 0.5, 'sine', 0.05), i * 150)); }
 };
 
@@ -58,7 +52,6 @@ function initTable() {
     const container = document.getElementById('players-container');
     container.innerHTML = '';
     players = [];
-    currentPlayerIndex = 0;
     gameState = 'IDLE';
 
     for (let i = 0; i < playerCount; i++) {
@@ -76,11 +69,7 @@ function initTable() {
         
         slot.innerHTML = `
             <div class="player-label">${players[i].name}</div>
-            <div class="card-group" id="cards-${i}">
-                <div class="card-container"><div class="card-face card-back"></div></div>
-                <div class="card-container"><div class="card-face card-back"></div></div>
-                <div class="card-container"><div class="card-face card-back"></div></div>
-            </div>
+            <div class="card-group" id="player${i+1}-cards"></div>
         `;
         container.appendChild(slot);
     }
@@ -89,16 +78,11 @@ function initTable() {
     document.getElementById('show-btn').classList.add('hidden');
     document.getElementById('restart-btn').classList.add('hidden');
     document.getElementById('winner-banner').classList.add('hidden');
-    document.getElementById('pass-overlay').classList.add('hidden');
 }
 
 function createDeck() {
     deck = [];
-    for (let s of SUITS) {
-        for (let v of VALUES) {
-            deck.push({ suit: s, value: v, rank: VALUE_MAP[v] });
-        }
-    }
+    for (let s of SUITS) for (let v of VALUES) deck.push({ value: v, suit: s });
 }
 
 function shuffle() {
@@ -119,117 +103,52 @@ async function dealCards() {
     document.getElementById('game-status').innerText = "DEALING...";
 
     players.forEach(p => {
-        document.getElementById(`cards-${p.id}`).innerHTML = '';
+        document.getElementById(`player${p.id+1}-cards`).innerHTML = '';
         document.getElementById(`player-${p.id}`).classList.remove('winner', 'active-glow');
     });
 
     for (let c = 0; c < 3; c++) {
         for (let p = 0; p < playerCount; p++) {
             const card = deck.pop();
-            players[p].cards[c] = card;
-            spawnCard(p, card, c);
+            players[p].cards.push(card);
+            renderSingleCard(p, card, c);
             AudioEngine.deal();
-            await new Promise(r => setTimeout(r, 120));
+            await new Promise(r => setTimeout(r, 150));
         }
     }
 
-    await new Promise(r => setTimeout(r, 400));
-    
-    if (systemMode === 'pass') {
-        startTurnSequence();
-    } else {
-        revealPlayer(0);
-        const showBtn = document.getElementById('show-btn');
-        showBtn.innerText = "SHOW HANDS";
-        showBtn.classList.remove('hidden');
-        showBtn.onclick = evaluateFinalWinner;
-        document.getElementById('game-status').innerText = "YOUR TURN";
-    }
-}
-
-function spawnCard(pId, card, idx) {
-    const container = document.getElementById(`cards-${pId}`);
-    const box = document.createElement('div');
-    box.className = 'card-container anim-deal';
-    box.id = `card-${pId}-${idx}`;
-    const isRed = card.suit === '♥' || card.suit === '♦';
-    
-    const slotRect = document.getElementById(`player-${pId}`).getBoundingClientRect();
-    const tableSurface = document.querySelector('.table-surface');
-    const tableRect = tableSurface.getBoundingClientRect();
-    
-    // Relative coordinates to the table center
-    const dx = (tableRect.width/2) - (slotRect.left - tableRect.left + slotRect.width/2);
-    const dy = (tableRect.height/2) - (slotRect.top - tableRect.top + slotRect.height/2);
-    
-    box.style.setProperty('--dx', `${dx}px`);
-    box.style.setProperty('--dy', `${dy}px`);
-    box.style.setProperty('--dr', `${Math.random() * 20 - 10}deg`);
-
-    box.innerHTML = `
-        <div class="card-face card-back"></div>
-        <div class="card-face card-front ${isRed ? 'red' : ''}">
-            <div class="top-left">${card.value}</div>
-            <div class="suit-center">${card.suit}</div>
-            <div class="bottom-right">${card.value}</div>
-        </div>
-    `;
-    container.appendChild(box);
-}
-
-function revealPlayer(pId) {
-    document.getElementById(`player-${pId}`).classList.add('active-glow');
-    for (let i = 0; i < 3; i++) {
-        setTimeout(() => {
-            const el = document.getElementById(`card-${pId}-${i}`);
-            if (el) el.classList.add('reveal');
-            AudioEngine.flip();
-        }, i * 150);
-    }
-}
-
-function startTurnSequence() {
-    gameState = 'PLAYING';
-    if (currentPlayerIndex < playerCount) {
-        document.getElementById('pass-player-name').innerText = players[currentPlayerIndex].name;
-        document.getElementById('pass-overlay').classList.remove('hidden');
-        document.getElementById('game-status').innerText = `PASS TO ${players[currentPlayerIndex].name}`;
-    } else {
-        evaluateFinalWinner();
-    }
-}
-
-function revealCurrentPlayer() {
-    document.getElementById('pass-overlay').classList.add('hidden');
-    const pId = currentPlayerIndex;
-    revealPlayer(pId);
-    
-    const showBtn = document.getElementById('show-btn');
-    showBtn.innerText = (currentPlayerIndex === playerCount - 1) ? "Final Showdown" : "End My Turn";
-    showBtn.classList.remove('hidden');
-    showBtn.onclick = () => {
-        document.getElementById(`player-${pId}`).classList.remove('active-glow');
-        for (let i = 0; i < 3; i++) {
-            const el = document.getElementById(`card-${pId}-${i}`);
-            if (el) el.classList.remove('reveal');
-        }
-        currentPlayerIndex++;
-        showBtn.classList.add('hidden');
-        startTurnSequence();
-    };
-    document.getElementById('game-status').innerText = `${players[pId].name} VIEWING`;
-}
-
-async function evaluateFinalWinner() {
     gameState = 'FINISHED';
-    document.getElementById('show-btn').classList.add('hidden');
-    document.getElementById('game-status').innerText = "REVEALING ALL...";
+    evaluateWinner();
+}
 
-    for (let i = 0; i < playerCount; i++) {
-        revealPlayer(i);
-        await new Promise(r => setTimeout(r, 400));
-    }
+function renderSingleCard(pIdx, card, cardIdx) {
+    const container = document.getElementById(`player${pIdx+1}-cards`);
+    const cardEl = document.createElement('div');
+    const isRed = card.suit === '♥' || card.suit === '♦';
+    cardEl.className = `card ${isRed ? 'red' : 'black'} anim-deal`;
+    
+    // Calculate Fly-In from center
+    const slotRect = document.getElementById(`player-${pIdx}`).getBoundingClientRect();
+    const tableRect = document.querySelector('.table-surface').getBoundingClientRect();
+    const centerX = tableRect.left + tableRect.width / 2;
+    const centerY = tableRect.top + tableRect.height / 2;
+    
+    const dx = centerX - (slotRect.left + slotRect.width / 2);
+    const dy = centerY - (slotRect.top + slotRect.height / 2);
+    
+    cardEl.style.setProperty('--dx', `${dx}px`);
+    cardEl.style.setProperty('--dy', `${dy}px`);
+    cardEl.style.setProperty('--dr', `${Math.random() * 20 - 10}deg`);
 
+    cardEl.innerHTML = `
+        <div class="top">${card.value}</div>
+        <div class="center">${card.suit}</div>
+        <div class="bottom">${card.value}</div>
+    `;
+    container.appendChild(cardEl);
+}
+
+function evaluateWinner() {
     players.forEach(p => p.handInfo = calculateScore(p.cards));
     const winner = players.reduce((p, c) => {
         if (!p) return c;
@@ -244,20 +163,23 @@ async function evaluateFinalWinner() {
         return p;
     });
 
-    await new Promise(r => setTimeout(r, 800));
-    document.getElementById(`player-${winner.id}`).classList.add('winner');
-    document.getElementById('win-name').innerText = winner.name;
-    document.getElementById('win-hand').innerText = winner.handInfo.name;
-    document.getElementById('winner-banner').classList.remove('hidden');
-    document.getElementById('last-winner').innerText = winner.name;
-    document.getElementById('game-status').innerText = "ROUND FINISHED";
-    AudioEngine.win(); haptic([100, 50, 100]);
-    document.getElementById('restart-btn').classList.remove('hidden');
+    setTimeout(() => {
+        document.getElementById(`player-${winner.id}`).classList.add('winner');
+        const banner = document.getElementById('winner-banner');
+        document.getElementById('win-name').innerText = winner.name;
+        document.getElementById('win-hand').innerText = winner.handInfo.name;
+        banner.classList.remove('hidden');
+        document.getElementById('last-winner').innerText = winner.name;
+        document.getElementById('game-status').innerText = "ROUND FINISHED";
+        AudioEngine.win();
+        haptic([100, 50, 100]);
+        document.getElementById('restart-btn').classList.remove('hidden');
+    }, 500);
 }
 
 function calculateScore(cards) {
-    const s = [...cards].sort((a,b) => b.rank - a.rank);
-    const r = s.map(c => c.rank), su = s.map(c => c.suit);
+    const s = [...cards].sort((a,b) => VALUE_MAP[b.value] - VALUE_MAP[a.value]);
+    const r = s.map(c => VALUE_MAP[c.value]), su = s.map(c => c.suit);
     const isT = r[0] === r[1] && r[1] === r[2];
     const isC = su[0] === su[1] && su[1] === su[2];
     let isS = false, high = r[0];
@@ -277,10 +199,5 @@ function calculateScore(cards) {
     return { score: 1, name: 'HIGH CARD', sub: r };
 }
 
-function resetGame() { 
-    roundCount++; 
-    document.getElementById('round-count').innerText = roundCount; 
-    initTable(); 
-}
-
+function resetGame() { roundCount++; document.getElementById('round-count').innerText = roundCount; initTable(); }
 window.onload = initTable;
