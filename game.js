@@ -318,4 +318,26 @@ function resetGame() {
     initTable();
 }
 
-window.onload = initTable;
+// Initial Boot
+window.onload = () => {
+    initTable();
+    setupDownloadCheck();
+};
+
+function setupDownloadCheck() {
+    const btns = [document.getElementById('nav-download-btn'), document.querySelector('.btn-apk-large')];
+    btns.forEach(btn => {
+        if (!btn) return;
+        btn.addEventListener('click', async (e) => {
+            try {
+                const response = await fetch('app-release.apk', { method: 'HEAD' });
+                if (!response.ok) {
+                    e.preventDefault();
+                    alert("🚀 BUILD REQUIRED: The real APK is not generated yet.\\n\\nTo generate it:\\n1. Open your terminal\\n2. Run: node automate.js\\n3. The file will then be ready at this link!");
+                }
+            } catch (err) {
+                // If fetch fails (server down or CORS), allow default behavior which leads to 404
+            }
+        });
+    });
+}
