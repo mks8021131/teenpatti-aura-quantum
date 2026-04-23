@@ -87,6 +87,15 @@
                     <div id="win-name">PLAYER 1</div>
                     <div id="win-hand">TRAIL</div>
                 </div>
+
+                <!-- Pass-and-Play Transition Overlay -->
+                <div id="pass-overlay" class="pass-overlay hidden">
+                    <div class="pass-content">
+                        <h2 id="pass-player-name">PLAYER 2</h2>
+                        <p>It's your turn</p>
+                        <button class="btn-primary" id="reveal-btn" onclick="revealCurrentPlayer()">Tap to Reveal Cards</button>
+                    </div>
+                </div>
             </main>
 
             <!-- Sidebar: Intelligence -->

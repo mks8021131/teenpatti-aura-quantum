@@ -7,6 +7,8 @@ let deck = [];
 let players = [];
 let playerCount = 4;
 let roundCount = 1;
+let currentPlayerIndex = 0;
+let gameState = 'IDLE'; // IDLE, DEALING, PLAYING, FINISHED
 
 const HAND_RANK = { TRAIL: 6, PURE_SEQUENCE: 5, SEQUENCE: 4, COLOR: 3, PAIR: 2, HIGH_CARD: 1 };
 
@@ -40,6 +42,7 @@ function hapticFeedback(pattern = 50) {
 }
 
 function setPlayerCount(num) {
+    if (gameState === 'DEALING' || gameState === 'PLAYING') return;
     playerCount = num;
     const btns = document.querySelectorAll('.selector-btn');
     btns.forEach(btn => {
@@ -53,21 +56,22 @@ function initTable() {
     const container = document.getElementById('players-container');
     container.innerHTML = '';
     players = [];
+    currentPlayerIndex = 0;
 
     for (let i = 0; i < playerCount; i++) {
         players.push({
             id: i,
-            name: i === 0 ? "YOU" : `CPU ${i + 1}`,
+            name: i === 0 ? "PLAYER 1" : `PLAYER ${i + 1}`,
             cards: [],
             pos: POSITIONS[i],
-            handInfo: null
+            handInfo: null,
+            seen: false
         });
 
         const slot = document.createElement('div');
         slot.className = `player-slot ${players[i].pos}`;
         slot.id = `player-${i}`;
         
-        // Initial state: Show 3 card-backs so table isn't empty
         let initialCardsHTML = '';
         for(let j=0; j<3; j++) {
             initialCardsHTML += `<div class="card-container"><div class="card-face card-back"></div></div>`;
@@ -82,6 +86,7 @@ function initTable() {
         container.appendChild(slot);
     }
     document.getElementById('game-status').innerText = "READY";
+    gameState = 'IDLE';
 }
 
 function createDeck() {
@@ -104,35 +109,28 @@ async function dealCards() {
     createDeck();
     shuffle();
     hapticFeedback(30);
+    gameState = 'DEALING';
     document.getElementById('deal-btn').classList.add('hidden');
-    document.getElementById('show-btn').classList.add('hidden');
-    document.getElementById('restart-btn').classList.add('hidden');
-    document.getElementById('winner-banner').classList.add('hidden');
     document.getElementById('game-status').innerText = "DEALING...";
 
-    // Clear and prepare for animation
     players.forEach(p => {
         document.getElementById(`cards-${p.id}`).innerHTML = '';
         document.getElementById(`player-${p.id}`).classList.remove('winner', 'active-glow');
+        p.seen = false;
     });
 
-    // Sequential Dealing
     for (let c = 0; c < 3; c++) {
         for (let p = 0; p < playerCount; p++) {
             const card = deck.pop();
             players[p].cards[c] = card;
             spawnCard(p, card, c);
             AudioEngine.deal();
-            await new Promise(r => setTimeout(r, 150));
+            await new Promise(r => setTimeout(r, 120));
         }
     }
 
-    // Auto-reveal for Player 1 (YOU)
-    await new Promise(r => setTimeout(r, 500));
-    revealPlayer(0);
-    
-    document.getElementById('show-btn').classList.remove('hidden');
-    document.getElementById('game-status').innerText = "AWAITING SHOW";
+    await new Promise(r => setTimeout(r, 400));
+    startMultiplayerTurn();
 }
 
 function spawnCard(pId, card, idx) {
@@ -143,7 +141,6 @@ function spawnCard(pId, card, idx) {
 
     const isRed = card.suit === '♥' || card.suit === '♦';
     
-    // Calculate vector from center deck
     const slotRect = document.getElementById(`player-${pId}`).getBoundingClientRect();
     const tableRect = document.getElementById('game-table').getBoundingClientRect();
     const centerX = tableRect.left + tableRect.width / 2;
@@ -154,7 +151,7 @@ function spawnCard(pId, card, idx) {
     
     box.style.setProperty('--dx', `${dx}px`);
     box.style.setProperty('--dy', `${dy}px`);
-    box.style.setProperty('--dr', `${Math.random() * 30 - 15}deg`); // Random tilt for realism
+    box.style.setProperty('--dr', `${Math.random() * 30 - 15}deg`);
 
     box.innerHTML = `
         <div class="card-face card-back"></div>
@@ -167,28 +164,84 @@ function spawnCard(pId, card, idx) {
     container.appendChild(box);
 }
 
-function revealPlayer(pId) {
+function startMultiplayerTurn() {
+    gameState = 'PLAYING';
+    if (currentPlayerIndex < playerCount) {
+        showPassOverlay();
+    } else {
+        showWinner();
+    }
+}
+
+function showPassOverlay() {
+    const overlay = document.getElementById('pass-overlay');
+    const nameEl = document.getElementById('pass-player-name');
+    nameEl.innerText = players[currentPlayerIndex].name;
+    overlay.classList.remove('hidden');
+    document.getElementById('game-status').innerText = `PASS TO ${players[currentPlayerIndex].name}`;
+}
+
+function revealCurrentPlayer() {
+    const overlay = document.getElementById('pass-overlay');
+    overlay.classList.add('hidden');
+    
+    const pId = currentPlayerIndex;
     const playerEl = document.getElementById(`player-${pId}`);
     playerEl.classList.add('active-glow');
+    
     for (let i = 0; i < 3; i++) {
         const card = document.getElementById(`card-${pId}-${i}`);
         if (card) {
             setTimeout(() => {
                 card.classList.add('reveal');
                 AudioEngine.flip();
-            }, i * 120);
+            }, i * 150);
         }
     }
+
+    players[pId].seen = true;
+    hapticFeedback(50);
+    
+    // Switch to "Next Player" button
+    const showBtn = document.getElementById('show-btn');
+    showBtn.innerText = (currentPlayerIndex === playerCount - 1) ? "Final Show" : "Next Player";
+    showBtn.classList.remove('hidden');
+    showBtn.onclick = nextTurn;
+    
+    document.getElementById('game-status').innerText = `${players[pId].name} VIEWING`;
+}
+
+function nextTurn() {
+    // Hide current player cards
+    const pId = currentPlayerIndex;
+    const playerEl = document.getElementById(`player-${pId}`);
+    playerEl.classList.remove('active-glow');
+    
+    for (let i = 0; i < 3; i++) {
+        const card = document.getElementById(`card-${pId}-${i}`);
+        if (card) card.classList.remove('reveal');
+    }
+
+    document.getElementById('show-btn').classList.add('hidden');
+    currentPlayerIndex++;
+    startMultiplayerTurn();
 }
 
 async function showWinner() {
+    gameState = 'FINISHED';
     document.getElementById('show-btn').classList.add('hidden');
     document.getElementById('game-status').innerText = "EVALUATING...";
 
-    // Reveal all CPU players
-    for (let i = 1; i < playerCount; i++) {
-        revealPlayer(i);
-        await new Promise(r => setTimeout(r, 400));
+    // Reveal ALL cards for final result
+    for (let i = 0; i < playerCount; i++) {
+        const playerEl = document.getElementById(`player-${i}`);
+        playerEl.classList.add('active-glow');
+        for (let j = 0; j < 3; j++) {
+            const card = document.getElementById(`card-${i}-${j}`);
+            if (card) card.classList.add('reveal');
+        }
+        AudioEngine.flip();
+        await new Promise(r => setTimeout(r, 300));
     }
 
     players.forEach(p => p.handInfo = evaluateHand(p.cards));
@@ -204,12 +257,14 @@ async function showWinner() {
     banner.classList.remove('hidden');
 
     document.getElementById('last-winner').innerText = winner.name;
-    document.getElementById('game-status').innerText = "FINISHED";
+    document.getElementById('game-status').innerText = "ROUND FINISHED";
     
     AudioEngine.win();
     hapticFeedback([100, 50, 100]);
 
-    document.getElementById('restart-btn').classList.remove('hidden');
+    const restartBtn = document.getElementById('restart-btn');
+    restartBtn.classList.remove('hidden');
+    restartBtn.onclick = resetGame;
 }
 
 function resetGame() {
@@ -218,6 +273,7 @@ function resetGame() {
     document.getElementById('winner-banner').classList.add('hidden');
     document.getElementById('restart-btn').classList.add('hidden');
     document.getElementById('deal-btn').classList.remove('hidden');
+    document.getElementById('deal-btn').onclick = dealCards;
     initTable();
 }
 
@@ -232,7 +288,6 @@ function evaluateHand(cards) {
     let isSeq = false;
     let seqHigh = ranks[0];
 
-    // Teen Patti Sequence Logic: AKQ highest, A23 second, then descending
     if (ranks[0] === 14 && ranks[1] === 13 && ranks[2] === 12) { isSeq = true; seqHigh = 15; }
     else if (ranks[0] === 14 && ranks[1] === 3 && ranks[2] === 2) { isSeq = true; seqHigh = 14; }
     else if (ranks[0] === ranks[1] + 1 && ranks[1] === ranks[2] + 1) { isSeq = true; seqHigh = ranks[0]; }
