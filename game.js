@@ -41,14 +41,11 @@ function hapticFeedback(pattern = 50) {
 
 function setPlayerCount(num) {
     playerCount = num;
-    document.querySelectorAll('.selector-btn').forEach(b => b.classList.remove('active'));
-    // Find the button that was clicked and add active class
-    // In this case, we rely on the inline onclick passing the number
     const btns = document.querySelectorAll('.selector-btn');
-    if (num === 2) btns[0].classList.add('active');
-    else if (num === 3) btns[1].classList.add('active');
-    else if (num === 4) btns[2].classList.add('active');
-    
+    btns.forEach(btn => {
+        btn.classList.remove('active');
+        if (parseInt(btn.innerText) === num) btn.classList.add('active');
+    });
     initTable();
 }
 
@@ -62,7 +59,8 @@ function initTable() {
             id: i,
             name: i === 0 ? "YOU" : `CPU ${i + 1}`,
             cards: [],
-            pos: POSITIONS[i]
+            pos: POSITIONS[i],
+            handInfo: null
         });
 
         const slot = document.createElement('div');
@@ -107,6 +105,9 @@ async function dealCards() {
     shuffle();
     hapticFeedback(30);
     document.getElementById('deal-btn').classList.add('hidden');
+    document.getElementById('show-btn').classList.add('hidden');
+    document.getElementById('restart-btn').classList.add('hidden');
+    document.getElementById('winner-banner').classList.add('hidden');
     document.getElementById('game-status').innerText = "DEALING...";
 
     // Clear and prepare for animation
@@ -115,6 +116,7 @@ async function dealCards() {
         document.getElementById(`player-${p.id}`).classList.remove('winner', 'active-glow');
     });
 
+    // Sequential Dealing
     for (let c = 0; c < 3; c++) {
         for (let p = 0; p < playerCount; p++) {
             const card = deck.pop();
@@ -125,7 +127,8 @@ async function dealCards() {
         }
     }
 
-    await new Promise(r => setTimeout(r, 400));
+    // Auto-reveal for Player 1 (YOU)
+    await new Promise(r => setTimeout(r, 500));
     revealPlayer(0);
     
     document.getElementById('show-btn').classList.remove('hidden');
@@ -140,6 +143,7 @@ function spawnCard(pId, card, idx) {
 
     const isRed = card.suit === '♥' || card.suit === '♦';
     
+    // Calculate vector from center deck
     const slotRect = document.getElementById(`player-${pId}`).getBoundingClientRect();
     const tableRect = document.getElementById('game-table').getBoundingClientRect();
     const centerX = tableRect.left + tableRect.width / 2;
@@ -150,7 +154,7 @@ function spawnCard(pId, card, idx) {
     
     box.style.setProperty('--dx', `${dx}px`);
     box.style.setProperty('--dy', `${dy}px`);
-    box.style.setProperty('--dr', `${Math.random() * 30 - 15}deg`);
+    box.style.setProperty('--dr', `${Math.random() * 30 - 15}deg`); // Random tilt for realism
 
     box.innerHTML = `
         <div class="card-face card-back"></div>
@@ -172,7 +176,7 @@ function revealPlayer(pId) {
             setTimeout(() => {
                 card.classList.add('reveal');
                 AudioEngine.flip();
-            }, i * 150);
+            }, i * 120);
         }
     }
 }
@@ -181,6 +185,7 @@ async function showWinner() {
     document.getElementById('show-btn').classList.add('hidden');
     document.getElementById('game-status').innerText = "EVALUATING...";
 
+    // Reveal all CPU players
     for (let i = 1; i < playerCount; i++) {
         revealPlayer(i);
         await new Promise(r => setTimeout(r, 400));
@@ -191,6 +196,7 @@ async function showWinner() {
 
     await new Promise(r => setTimeout(r, 600));
 
+    // UI Updates for Winner
     document.getElementById(`player-${winner.id}`).classList.add('winner');
     const banner = document.getElementById('winner-banner');
     document.getElementById('win-name').innerText = winner.name;
@@ -226,6 +232,7 @@ function evaluateHand(cards) {
     let isSeq = false;
     let seqHigh = ranks[0];
 
+    // Teen Patti Sequence Logic: AKQ highest, A23 second, then descending
     if (ranks[0] === 14 && ranks[1] === 13 && ranks[2] === 12) { isSeq = true; seqHigh = 15; }
     else if (ranks[0] === 14 && ranks[1] === 3 && ranks[2] === 2) { isSeq = true; seqHigh = 14; }
     else if (ranks[0] === ranks[1] + 1 && ranks[1] === ranks[2] + 1) { isSeq = true; seqHigh = ranks[0]; }
