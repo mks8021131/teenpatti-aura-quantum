@@ -5,6 +5,8 @@ const VALUE_MAP = {
     'J': 11, 'Q': 12, 'K': 13, 'A': 14
 };
 
+const POSITIONS = ['pos-bottom', 'pos-top', 'pos-left', 'pos-right'];
+
 let deck = [];
 let players = [];
 let playerCount = 0;
@@ -46,54 +48,77 @@ function initPlayers() {
     const container = document.getElementById('players-container');
     container.innerHTML = '';
 
-    for (let i = 1; i <= playerCount; i++) {
+    for (let i = 0; i < playerCount; i++) {
         players.push({
             id: i,
-            name: `Player ${i}`,
+            name: `Player ${i + 1}`,
             cards: [],
-            handInfo: null
+            handInfo: null,
+            pos: POSITIONS[i]
         });
 
         const playerDiv = document.createElement('div');
-        playerDiv.className = 'player-card-area';
+        playerDiv.className = `player-card-area ${players[i].pos}`;
         playerDiv.id = `player-${i}`;
         playerDiv.innerHTML = `
-            <div class="player-name">PLAYER ${i}</div>
-            <div class="cards" id="cards-${i}">
-                <div class="card back">?</div>
-                <div class="card back">?</div>
-                <div class="card back">?</div>
-            </div>
+            <div class="player-name">${players[i].name}</div>
+            <div class="cards" id="cards-${i}"></div>
         `;
         container.appendChild(playerDiv);
     }
 }
 
-function dealCards() {
+async function dealCards() {
     createDeck();
     shuffleDeck();
 
-    for (let player of players) {
-        player.cards = [deck.pop(), deck.pop(), deck.pop()];
-        renderCards(player, true); // Keep them face down initially
+    const dealBtn = document.getElementById('deal-btn');
+    dealBtn.disabled = true;
+    dealBtn.style.opacity = '0.5';
+
+    // Sequential dealing animation
+    for (let cardIdx = 0; cardIdx < 3; cardIdx++) {
+        for (let player of players) {
+            const card = deck.pop();
+            player.cards[cardIdx] = card;
+            addCardToUI(player.id, card, true, cardIdx);
+            await new Promise(resolve => setTimeout(resolve, 150));
+        }
     }
 
-    document.getElementById('deal-btn').classList.add('hidden');
+    dealBtn.classList.add('hidden');
+    dealBtn.disabled = false;
+    dealBtn.style.opacity = '1';
     document.getElementById('show-btn').classList.remove('hidden');
 }
 
-function renderCards(player, faceDown = false) {
+function addCardToUI(playerId, card, faceDown, index) {
+    const cardContainer = document.getElementById(`cards-${playerId}`);
+    const cardEl = document.createElement('div');
+    
+    cardEl.className = `card back card-deal-anim`;
+    cardEl.style.animationDelay = '0s';
+    cardEl.innerHTML = '?';
+    
+    cardContainer.appendChild(cardEl);
+}
+
+function renderPlayerCards(player, reveal = false) {
     const cardContainer = document.getElementById(`cards-${player.id}`);
     cardContainer.innerHTML = '';
 
-    player.cards.forEach((card, index) => {
+    player.cards.forEach((card) => {
         const cardEl = document.createElement('div');
-        cardEl.className = `card ${faceDown ? 'back' : ''} ${(!faceDown && (card.suit === '♥' || card.suit === '♦')) ? 'red' : ''}`;
-        cardEl.style.animationDelay = `${index * 0.1}s`;
+        const isRed = card.suit === '♥' || card.suit === '♦';
         
-        if (!faceDown) {
-            cardEl.innerHTML = `<span>${card.value}</span><span>${card.suit}</span>`;
+        if (reveal) {
+            cardEl.className = `card ${isRed ? 'red' : ''}`;
+            cardEl.innerHTML = `
+                <span>${card.value}${card.suit}</span>
+                <span>${card.value}${card.suit}</span>
+            `;
         } else {
+            cardEl.className = `card back`;
             cardEl.innerHTML = '?';
         }
         cardContainer.appendChild(cardEl);
@@ -102,22 +127,17 @@ function renderCards(player, faceDown = false) {
 
 function showWinner() {
     players.forEach(p => {
-        renderCards(p, false);
         p.handInfo = evaluateHand(p.cards);
+        renderPlayerCards(p, true);
     });
 
     const winner = determineWinner(players);
     
-    // Highlight winner
     document.getElementById(`player-${winner.id}`).classList.add('winner');
     
-    // Show banner
     const banner = document.getElementById('winner-banner');
-    const winnerText = document.getElementById('winner-text');
-    const handTypeText = document.getElementById('winning-hand-type');
-    
-    winnerText.innerText = `${winner.name} WINS!`;
-    handTypeText.innerText = winner.handInfo.handName;
+    document.getElementById('winner-text').innerText = `${winner.name} Wins!`;
+    document.getElementById('winning-hand-type').innerText = winner.handInfo.handName;
     banner.classList.remove('hidden');
 
     document.getElementById('show-btn').classList.add('hidden');
@@ -133,7 +153,6 @@ function resetGame() {
 }
 
 function evaluateHand(cards) {
-    // Sort cards by rank descending
     const sorted = [...cards].sort((a, b) => b.rank - a.rank);
     const ranks = sorted.map(c => c.rank);
     const suits = sorted.map(c => c.suit);
@@ -141,21 +160,18 @@ function evaluateHand(cards) {
     const isTrail = ranks[0] === ranks[1] && ranks[1] === ranks[2];
     const isColor = suits[0] === suits[1] && suits[1] === suits[2];
     
-    // Sequence check (Standard: AKQ, A23, KQJ... 432)
     let isSeq = false;
     let seqHighCard = ranks[0];
 
     if (ranks[0] === 14 && ranks[1] === 13 && ranks[2] === 12) {
-        // A, K, Q
         isSeq = true;
-        seqHighCard = 15; // Highest
+        seqHighCard = 15;
     } else if (ranks[0] === 14 && ranks[1] === 3 && ranks[2] === 2) {
-        // A, 2, 3
         isSeq = true;
-        seqHighCard = 14; // Second highest
+        seqHighCard = 14;
     } else if (ranks[0] === ranks[1] + 1 && ranks[1] === ranks[2] + 1) {
         isSeq = true;
-        seqHighCard = ranks[0]; // Others (max 13 for KQJ)
+        seqHighCard = ranks[0];
     }
 
     if (isTrail) return { score: HAND_RANK.TRAIL, handName: 'Trail (Set)', subRank: ranks[0] };
@@ -178,14 +194,12 @@ function evaluateHand(cards) {
 function determineWinner(players) {
     return players.reduce((prev, curr) => {
         if (!prev) return curr;
-        
         const pHand = prev.handInfo;
         const cHand = curr.handInfo;
 
         if (cHand.score > pHand.score) return curr;
         if (cHand.score < pHand.score) return prev;
 
-        // Same hand type, compare subRanks
         if (Array.isArray(cHand.subRank)) {
             for (let i = 0; i < cHand.subRank.length; i++) {
                 if (cHand.subRank[i] > pHand.subRank[i]) return curr;
@@ -195,7 +209,6 @@ function determineWinner(players) {
             if (cHand.subRank > pHand.subRank) return curr;
             if (cHand.subRank < pHand.subRank) return prev;
         }
-
-        return prev; // Tie goes to first player (simplification)
+        return prev;
     });
 }
