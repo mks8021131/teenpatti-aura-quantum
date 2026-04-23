@@ -14,7 +14,10 @@ let systemMode = 'cpu';
 // Premium Audio Engine
 const AudioEngine = {
     ctx: null,
-    init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); if (this.ctx.state === 'suspended') this.ctx.resume(); },
+    init() { 
+        if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); 
+        if (this.ctx.state === 'suspended') this.ctx.resume(); 
+    },
     play(freq, dur = 0.1, type = 'sine', vol = 0.05) {
         if (!document.getElementById('sound-toggle').checked) return;
         this.init();
@@ -71,7 +74,6 @@ function initTable() {
         slot.className = `player-slot ${players[i].pos}`;
         slot.id = `player-${i}`;
         
-        // Initial setup with card-backs for premium feel
         slot.innerHTML = `
             <div class="player-label">${players[i].name}</div>
             <div class="card-group" id="cards-${i}">
@@ -114,7 +116,7 @@ async function dealCards() {
     haptic(30);
     gameState = 'DEALING';
     document.getElementById('deal-btn').classList.add('hidden');
-    document.getElementById('game-status').innerText = "DEALING HANDS...";
+    document.getElementById('game-status').innerText = "DEALING...";
 
     players.forEach(p => {
         document.getElementById(`cards-${p.id}`).innerHTML = '';
@@ -137,9 +139,10 @@ async function dealCards() {
         startTurnSequence();
     } else {
         revealPlayer(0);
-        document.getElementById('show-btn').innerText = "SHOW HANDS";
-        document.getElementById('show-btn').classList.remove('hidden');
-        document.getElementById('show-btn').onclick = evaluateFinalWinner;
+        const showBtn = document.getElementById('show-btn');
+        showBtn.innerText = "SHOW HANDS";
+        showBtn.classList.remove('hidden');
+        showBtn.onclick = evaluateFinalWinner;
         document.getElementById('game-status').innerText = "YOUR TURN";
     }
 }
@@ -152,7 +155,10 @@ function spawnCard(pId, card, idx) {
     const isRed = card.suit === '♥' || card.suit === '♦';
     
     const slotRect = document.getElementById(`player-${pId}`).getBoundingClientRect();
-    const tableRect = document.querySelector('.table-surface').getBoundingClientRect();
+    const tableSurface = document.querySelector('.table-surface');
+    const tableRect = tableSurface.getBoundingClientRect();
+    
+    // Relative coordinates to the table center
     const dx = (tableRect.width/2) - (slotRect.left - tableRect.left + slotRect.width/2);
     const dy = (tableRect.height/2) - (slotRect.top - tableRect.top + slotRect.height/2);
     
@@ -187,6 +193,7 @@ function startTurnSequence() {
     if (currentPlayerIndex < playerCount) {
         document.getElementById('pass-player-name').innerText = players[currentPlayerIndex].name;
         document.getElementById('pass-overlay').classList.remove('hidden');
+        document.getElementById('game-status').innerText = `PASS TO ${players[currentPlayerIndex].name}`;
     } else {
         evaluateFinalWinner();
     }
@@ -198,15 +205,19 @@ function revealCurrentPlayer() {
     revealPlayer(pId);
     
     const showBtn = document.getElementById('show-btn');
-    showBtn.innerText = (currentPlayerIndex === playerCount - 1) ? "Final Showdown" : "End Turn";
+    showBtn.innerText = (currentPlayerIndex === playerCount - 1) ? "Final Showdown" : "End My Turn";
     showBtn.classList.remove('hidden');
     showBtn.onclick = () => {
         document.getElementById(`player-${pId}`).classList.remove('active-glow');
-        for (let i = 0; i < 3; i++) document.getElementById(`card-${pId}-${i}`).classList.remove('reveal');
+        for (let i = 0; i < 3; i++) {
+            const el = document.getElementById(`card-${pId}-${i}`);
+            if (el) el.classList.remove('reveal');
+        }
         currentPlayerIndex++;
         showBtn.classList.add('hidden');
         startTurnSequence();
     };
+    document.getElementById('game-status').innerText = `${players[pId].name} VIEWING`;
 }
 
 async function evaluateFinalWinner() {
@@ -239,7 +250,7 @@ async function evaluateFinalWinner() {
     document.getElementById('win-hand').innerText = winner.handInfo.name;
     document.getElementById('winner-banner').classList.remove('hidden');
     document.getElementById('last-winner').innerText = winner.name;
-    document.getElementById('game-status').innerText = "ROUND COMPLETE";
+    document.getElementById('game-status').innerText = "ROUND FINISHED";
     AudioEngine.win(); haptic([100, 50, 100]);
     document.getElementById('restart-btn').classList.remove('hidden');
 }
@@ -259,11 +270,17 @@ function calculateScore(cards) {
     if (isS) return { score: 4, name: 'SEQUENCE', sub: high };
     if (isC) return { score: 3, name: 'COLOR (FLUSH)', sub: r };
     if (r[0] === r[1] || r[1] === r[2]) {
-        const pR = r[1], k = (r[0] === r[1]) ? r[2] : r[0];
+        const pR = (r[0] === r[1]) ? r[0] : r[1];
+        const k = (r[0] === r[1]) ? r[2] : r[0];
         return { score: 2, name: 'PAIR', sub: [pR, k] };
     }
     return { score: 1, name: 'HIGH CARD', sub: r };
 }
 
-function resetGame() { roundCount++; document.getElementById('round-count').innerText = roundCount; initTable(); }
+function resetGame() { 
+    roundCount++; 
+    document.getElementById('round-count').innerText = roundCount; 
+    initTable(); 
+}
+
 window.onload = initTable;
