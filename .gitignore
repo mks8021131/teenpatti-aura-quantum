@@ -1,0 +1,8 @@
+node_modules/
+build/
+*.apk
+*.log
+teenpatti_app/
+server/
+automate.js
+.gemini/
